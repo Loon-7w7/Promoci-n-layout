@@ -9,18 +9,38 @@ y descargas el archivo listo para Filmora.
 - Python 3.10 o superior
 - **ffmpeg** en el PATH (`ffmpeg -version` tiene que responder)
   - Ubuntu/Debian: `sudo apt install ffmpeg`
-  - Windows: descárgalo de ffmpeg.org y agrégalo al PATH
-- En Linux, cairosvg necesita las librerías de Cairo:
-  `sudo apt install libcairo2 libpango-1.0-0 libpangocairo-1.0-0`
+  - Windows: `winget install Gyan.FFmpeg` y reinicia la terminal
+
+El rasterizado de SVG lo hace `resvg-py`, que se instala como cualquier paquete de
+pip y no necesita librerías del sistema en ningún sistema operativo.
 
 ## Instalación
 
+Linux y macOS:
+
 ```bash
 cd overlay-app
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+Windows (PowerShell):
+
+```powershell
+cd overlay-app
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Si al activar el entorno sale un error de directivas de ejecución:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+Solo aplica a esa ventana de terminal.
 
 ## Uso
 
@@ -53,7 +73,8 @@ Al menos uno de `--twitch` o `--kick` es obligatorio.
 2. `fontTools` convierte cada letra de Poppins en un `<path>`, así que el resultado no
    depende de que la fuente esté instalada. De paso mide el ancho real del nombre para
    ajustar el cuerpo de letra y que nunca se desborde de la barra.
-3. `cairosvg` rasteriza los fotogramas a PNG con transparencia, en paralelo.
+3. `resvg` rasteriza los fotogramas a PNG con transparencia, en paralelo. Si no está
+   instalado, usa `cairosvg` como alternativa.
 4. `ffmpeg` los junta en WebM con `libvpx-vp9` y `yuva420p`, que es lo que conserva el alfa.
 
 Para comprobar que un archivo salió bien:
@@ -79,3 +100,22 @@ En `overlay.py`, arriba del todo:
 Poppins está incluida en `fonts/` bajo licencia SIL Open Font License 1.1.
 Puedes cambiarla por cualquier otro `.ttf`: reemplaza los archivos y ajusta el
 diccionario `FONTS`.
+
+## Si algo falla
+
+**`no library called "cairo-2" was found`**
+Es cairosvg buscando las DLL de Cairo, que en Windows no vienen con el sistema.
+Instala el rasterizador que no depende de nada externo:
+
+```powershell
+pip install resvg-py
+```
+
+El código lo detecta solo y lo prefiere sobre cairosvg. Para confirmar cuál está
+usando, abre <http://127.0.0.1:8000/health>: el campo `rasterizador` te lo dice.
+
+Si prefieres quedarte con cairosvg en Windows, instala el GTK3 Runtime, que trae
+las DLL que le faltan.
+
+**`No encuentro ffmpeg en el PATH`**
+Instálalo y **reinicia la terminal**, porque el PATH se lee al abrirla.

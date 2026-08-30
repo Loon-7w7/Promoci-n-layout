@@ -236,10 +236,10 @@ def frame_svg(t: float, cfg: Config) -> str:
   <clipPath id="bandR">{right}</clipPath>
   <clipPath id="wipe"><rect x="{BX-30}" y="{by-60}" width="{wipe_w+30:.2f}" height="{BH+120}"/></clipPath>
   <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">{edge}</linearGradient>
-  <filter id="lift" x="-40%" y="-40%" width="180%" height="180%">
+  <filter id="lift" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
     <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.55"/>
   </filter>
-  <filter id="liftText" x="-40%" y="-40%" width="180%" height="180%">
+  <filter id="liftText" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
     <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000000" flood-opacity="0.75"/>
   </filter>
 </defs>''']
@@ -295,14 +295,56 @@ def frame_svg(t: float, cfg: Config) -> str:
     return "\n".join(s)
 
 
+
+# ---------------------------------------------------------------- rasterizado
+# Se usa resvg si esta disponible (rueda de pip, sin dependencias externas)
+# y cairosvg como alternativa. En Windows cairosvg necesita las DLL de Cairo,
+# asi que resvg es la opcion recomendada ahi.
+_ENGINE = None
+
+
+def raster_engine() -> str:
+    """Devuelve 'resvg', 'cairosvg' o lanza RuntimeError si no hay ninguno."""
+    global _ENGINE
+    if _ENGINE:
+        return _ENGINE
+    try:
+        import resvg_py  # noqa: F401
+        _ENGINE = "resvg"
+        return _ENGINE
+    except Exception:
+        pass
+    try:
+        import cairosvg  # noqa: F401
+        _ENGINE = "cairosvg"
+        return _ENGINE
+    except Exception as e:
+        raise RuntimeError(
+            "No hay motor de rasterizado. Instala uno:\n"
+            "  pip install resvg-py     (recomendado, funciona en Windows sin nada mas)\n"
+            "  pip install cairosvg     (necesita las librerias de Cairo en el sistema)\n"
+            f"Ultimo error: {e}"
+        )
+
+
+def rasterize(svg: str, out_png: str) -> None:
+    """Convierte el SVG a PNG con transparencia."""
+    if raster_engine() == "resvg":
+        import resvg_py
+        data = resvg_py.svg_to_bytes(svg_string=svg, width=W, height=H)
+        with open(out_png, "wb") as f:
+            f.write(bytes(data))
+    else:
+        import cairosvg
+        cairosvg.svg2png(bytestring=svg.encode("utf-8"), write_to=out_png,
+                         output_width=W, output_height=H)
+
+
 # ---------------------------------------------------------------- render
 def _worker(job):
-    import cairosvg
     i, t, cfg_dict, outdir = job
     cfg = Config(**cfg_dict)
-    cairosvg.svg2png(bytestring=frame_svg(t, cfg).encode("utf-8"),
-                     write_to=os.path.join(outdir, f"f{i:05d}.png"),
-                     output_width=W, output_height=H)
+    rasterize(frame_svg(t, cfg), os.path.join(outdir, f"f{i:05d}.png"))
     return i
 
 
@@ -313,6 +355,7 @@ def ffmpeg_ok() -> bool:
 def render_webm(cfg: Config, out_path: str, workers: int | None = None) -> str:
     if not ffmpeg_ok():
         raise RuntimeError("No encuentro ffmpeg en el PATH. Instalalo y vuelve a intentar.")
+    raster_engine()  # falla temprano y con un mensaje claro si no hay rasterizador
     cfg = cfg.clean()
     n = int(round(cfg.duration * cfg.fps))
     tmp = tempfile.mkdtemp(prefix="overlay_")

@@ -89,4 +89,9 @@ def render(body: RenderIn):
 
 @app.get("/health")
 def health():
-    return {"ok": True, "ffmpeg": overlay.ffmpeg_ok(), "posiciones": list(POSITIONS)}
+    try:
+        motor = overlay.raster_engine()
+    except Exception as e:
+        motor = f"ninguno ({e})"
+    return {"ok": True, "ffmpeg": overlay.ffmpeg_ok(),
+            "rasterizador": motor, "posiciones": list(POSITIONS)}
