@@ -50,7 +50,7 @@ uvicorn app:app --port 8000
 
 Abre <http://127.0.0.1:8000>.
 
-La vista previa se actualiza sola mientras escribes (muestra el fotograma final).
+La vista previa se actualiza sola mientras escribes y reproduce la entrada en bucle.
 El botón genera el video completo con la entrada animada; tarda entre 10 y 60 segundos
 según los núcleos que tenga tu máquina, porque renderiza 180 fotogramas.
 
@@ -60,11 +60,35 @@ Si quieres exponerlo en tu red local: `uvicorn app:app --host 0.0.0.0 --port 800
 
 ```bash
 python overlay.py --twitch Loon_VT --kick LoonVT
-python overlay.py --twitch Harukii_VT --kick Harukii_VT --position baja --duration 8
-python overlay.py --kick solo_kick -o mi-overlay.webm
+python overlay.py --twitch Harukii_VT --kick Harukii_VT --position baja --animation rebote
+python overlay.py --kick solo_kick --align izquierda -o mi-overlay.webm
 ```
 
 Al menos uno de `--twitch` o `--kick` es obligatorio.
+
+Opciones: `--align` (izquierda, centro, derecha), `--position` (alta, media, baja),
+`--animation` (barrido, deslizar, rebote, escala, cortina, desvanecer),
+`--duration`, `--fps`.
+
+## Las animaciones
+
+| Nombre | Qué hace |
+| --- | --- |
+| `barrido` | La barra se revela de izquierda a derecha |
+| `deslizar` | Sube desde abajo con desvanecido |
+| `rebote` | Igual, pero se pasa un poco y regresa |
+| `escala` | Crece desde su propio centro |
+| `cortina` | Se abre a lo ancho desde el centro |
+| `desvanecer` | Solo aparece, sin movimiento |
+
+En todas, los bloques de Twitch y Kick entran escalonados y el texto de arriba
+aparece al final.
+
+Están definidas en `anim_state()`, dentro de `overlay.py`. Cada una es un puñado de
+líneas que devuelven desplazamiento, escala y opacidad en función del segundo `t`.
+Agregar una nueva es añadir un `elif` ahí y una opción en el `<select>` de la
+interfaz. La vista previa del navegador se anima sola, porque muestrea esa misma
+función y la convierte en SMIL.
 
 ## Cómo funciona
 

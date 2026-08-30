@@ -20,6 +20,15 @@ y bajo el texto para que aguante tanto escenas oscuras como claras.
 de botones de TikTok y Reels. La posición "media" (`y = 1230`) deja libre el tercio
 inferior para los subtítulos de la plataforma.
 
+**La barra va centrada por defecto**, con `align` configurable a izquierda, centro
+o derecha. `layout()` calcula `bx` a partir del ancho ya resuelto, así que centrar
+funciona igual cuando la barra se encoge por tener una sola plataforma.
+
+**Las animaciones viven en `anim_state()`**, una función pura que devuelve
+desplazamiento, escala, opacidad y barrido en el segundo `t`. El video la muestrea
+fotograma a fotograma; la vista previa del navegador la muestrea 26 veces y la
+convierte en SMIL. Una sola fuente de verdad, así que no se pueden desincronizar.
+
 **La costura diagonal es la firma visual.** Separa el lado morado de Twitch del lado
 oscuro de Kick. Cuando solo hay una plataforma activa, la costura desaparece y la
 barra se encoge para ajustarse al contenido.

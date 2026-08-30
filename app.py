@@ -31,6 +31,8 @@ class RenderIn(BaseModel):
     kick: str | None = None
     label: str = "sígueme en vivo"
     position: str = "media"
+    align: str = "centro"
+    animation: str = "barrido"
     duration: float = Field(6.0, ge=2, le=30)
     fps: int = 30
 
@@ -47,13 +49,16 @@ def preview(
     kick: str | None = Query(None),
     label: str = Query("sígueme en vivo"),
     position: str = Query("media"),
+    align: str = Query("centro"),
+    animation: str = Query("barrido"),
+    animate: int = Query(0, description="1 = la vista previa reproduce la entrada en bucle"),
 ):
-    """Fotograma final del overlay, para la vista previa del navegador."""
+    """Vista previa del overlay. Con animate=1 sale animada con SMIL."""
     try:
-        cfg = Config(twitch, kick, label, position).clean()
+        cfg = Config(twitch, kick, label, position, align, animation).clean()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    svg = overlay.frame_svg(99.0, cfg)
+    svg = overlay.frame_svg(99.0, cfg, cycle=3.4 if animate else None)
     return Response(svg, media_type="image/svg+xml",
                     headers={"Cache-Control": "no-store"})
 
@@ -65,8 +70,8 @@ def render(body: RenderIn):
         raise HTTPException(status_code=500,
                             detail="No encuentro ffmpeg en el PATH del servidor.")
     try:
-        cfg = Config(body.twitch, body.kick, body.label,
-                     body.position, body.duration, body.fps).clean()
+        cfg = Config(body.twitch, body.kick, body.label, body.position,
+                     body.align, body.animation, body.duration, body.fps).clean()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -93,5 +98,6 @@ def health():
         motor = overlay.raster_engine()
     except Exception as e:
         motor = f"ninguno ({e})"
-    return {"ok": True, "ffmpeg": overlay.ffmpeg_ok(),
-            "rasterizador": motor, "posiciones": list(POSITIONS)}
+    return {"ok": True, "ffmpeg": overlay.ffmpeg_ok(), "rasterizador": motor,
+            "posiciones": list(POSITIONS), "alineaciones": list(overlay.ALIGNMENTS),
+            "animaciones": overlay.ANIMATIONS}

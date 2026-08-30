@@ -126,9 +126,19 @@
       <label class="small" for="label">Texto de arriba</label>
       <div class="field"><input type="text" id="label" value="sígueme en vivo" maxlength="40"></div>
 
+      <label class="small" for="animation">Animación de entrada</label>
+      <div class="field"><select id="animation">
+        <option value="barrido" selected>Barrido lateral</option>
+        <option value="deslizar">Sube desde abajo</option>
+        <option value="rebote">Sube con rebote</option>
+        <option value="escala">Crece desde el centro</option>
+        <option value="cortina">Se abre como cortina</option>
+        <option value="desvanecer">Aparece suave</option>
+      </select></div>
+
       <div class="grid2">
         <div>
-          <label class="small" for="position">Posición</label>
+          <label class="small" for="position">Altura</label>
           <div class="field"><select id="position">
             <option value="alta">Alta</option>
             <option value="media" selected>Media</option>
@@ -136,10 +146,17 @@
           </select></div>
         </div>
         <div>
-          <label class="small" for="duration">Duración (s)</label>
-          <div class="field"><input type="number" id="duration" value="6" min="2" max="30" step="1"></div>
+          <label class="small" for="align">Alineación</label>
+          <div class="field"><select id="align">
+            <option value="izquierda">Izquierda</option>
+            <option value="centro" selected>Centro</option>
+            <option value="derecha">Derecha</option>
+          </select></div>
         </div>
       </div>
+
+      <label class="small" for="duration">Duración (s)</label>
+      <div class="field"><input type="number" id="duration" value="6" min="2" max="30" step="1"></div>
 
       <button class="go" id="go">Generar WebM</button>
       <div class="warn" id="warn"></div>
@@ -160,7 +177,7 @@
         <button data-bg="dark" aria-pressed="false">Fondo oscuro</button>
         <button data-bg="light" aria-pressed="false">Fondo claro</button>
       </div>
-      <p class="hint">La vista previa muestra el fotograma final. El video incluye la entrada animada.</p>
+      <p class="hint">La vista previa repite la entrada en bucle. Si no se mueve, tu navegador no soporta SMIL; el video sí saldrá animado.</p>
     </div>
   </div>
 </div>
@@ -176,6 +193,8 @@ function estado() {
     kick:   onKk.checked ? nameKk.value.trim() : null,
     label:  $('label').value,
     position: $('position').value,
+    align: $('align').value,
+    animation: $('animation').value,
     duration: parseFloat($('duration').value) || 6,
     fps: 30
   };
@@ -212,6 +231,9 @@ function refrescar() {
     if (s.kick) q.set('kick', s.kick);
     q.set('label', s.label);
     q.set('position', s.position);
+    q.set('align', s.align);
+    q.set('animation', s.animation);
+    q.set('animate', '1');
     $('prev').src = '/preview.svg?' + q.toString();
     $('prev').style.display = '';
     $('vid').style.display = 'none';
@@ -224,7 +246,7 @@ nameTw.addEventListener('input', () => {
   refrescar();
 });
 nameKk.addEventListener('input', () => { kickTocado = nameKk.value.trim() !== ''; refrescar(); });
-['onTw','onKk','label','position','duration'].forEach(id => {
+['onTw','onKk','label','position','align','animation','duration'].forEach(id => {
   $(id).addEventListener('input', refrescar);
   $(id).addEventListener('change', refrescar);
 });
