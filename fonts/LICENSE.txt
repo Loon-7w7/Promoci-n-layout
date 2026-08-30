@@ -1,0 +1,8 @@
+Poppins
+Copyright (c) Indian Type Foundry (Jonny Pinhorn, Ninad Kale).
+
+Distribuida bajo la SIL Open Font License, versión 1.1.
+Texto completo de la licencia: https://openfontlicense.org
+
+Si redistribuyes este proyecto con las fuentes incluidas, acompaña los .ttf
+con el texto completo de la OFL 1.1 desde ese enlace.
