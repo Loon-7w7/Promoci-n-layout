@@ -50,10 +50,10 @@ def anim_state(t: float, cfg: Config, L: dict) -> dict:
     }
 
     if kind == "barrido":
-        p = _seg(t, 0.0, 0.60)
-        st["wipe"] = L["bw"] * p
-        st["tx"] = -26 * (1 - p)
-        st["lb_dx"] = -24 * (1 - lb_p)
+         p = _seg(t, 0.0, 0.60)
+         st["wipe"] = (L["bw"] + 90) * p  
+         st["tx"] = -26 * (1 - p)
+         st["lb_dx"] = -24 * (1 - lb_p)
 
     elif kind == "deslizar":
         p = _seg(t, 0.0, 0.65)
