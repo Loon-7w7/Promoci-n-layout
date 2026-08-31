@@ -16,10 +16,11 @@ pip y no necesita librerías del sistema en ningún sistema operativo.
 
 ## Instalación
 
+Todo se ejecuta desde la raíz del repo, donde está `requirements.txt`.
+
 Linux y macOS:
 
 ```bash
-cd overlay-app
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -28,7 +29,6 @@ pip install -r requirements.txt
 Windows (PowerShell):
 
 ```powershell
-cd overlay-app
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -44,7 +44,10 @@ Solo aplica a esa ventana de terminal.
 
 ## Uso
 
+El servidor vive en `src/`, así que hay que pararse ahí antes de levantarlo:
+
 ```bash
+cd src
 uvicorn app:app --port 8000
 ```
 
@@ -58,10 +61,13 @@ Si quieres exponerlo en tu red local: `uvicorn app:app --host 0.0.0.0 --port 800
 
 ## Desde la terminal, sin interfaz
 
+`overlay` es un paquete de Python, así que se invoca con `-m` desde `src/`:
+
 ```bash
-python overlay.py --twitch Loon_VT --kick LoonVT
-python overlay.py --twitch Harukii_VT --kick Harukii_VT --position baja --animation rebote
-python overlay.py --kick solo_kick --align izquierda -o mi-overlay.webm
+cd src
+python -m overlay --twitch Loon_VT --kick LoonVT
+python -m overlay --twitch Harukii_VT --kick Harukii_VT --position baja --animation rebote
+python -m overlay --kick solo_kick --align izquierda -o mi-overlay.webm
 ```
 
 Al menos uno de `--twitch` o `--kick` es obligatorio.
@@ -84,16 +90,16 @@ Opciones: `--align` (izquierda, centro, derecha), `--position` (alta, media, baj
 En todas, los bloques de Twitch y Kick entran escalonados y el texto de arriba
 aparece al final.
 
-Están definidas en `anim_state()`, dentro de `overlay.py`. Cada una es un puñado de
-líneas que devuelven desplazamiento, escala y opacidad en función del segundo `t`.
-Agregar una nueva es añadir un `elif` ahí y una opción en el `<select>` de la
-interfaz. La vista previa del navegador se anima sola, porque muestrea esa misma
-función y la convierte en SMIL.
+Están definidas en `anim_state()`, dentro de `src/overlay/animation.py`. Cada una es
+un puñado de líneas que devuelven desplazamiento, escala y opacidad en función del
+segundo `t`. Agregar una nueva es añadir un `elif` ahí y una opción en el `<select>`
+de la interfaz. La vista previa del navegador se anima sola, porque muestrea esa
+misma función y la convierte en SMIL.
 
 ## Cómo funciona
 
-1. `overlay.py` arma un SVG por fotograma. La posición, la opacidad y el barrido de
-   entrada se calculan en función del tiempo con una curva `easeOutCubic`.
+1. `src/overlay/svg.py` arma un SVG por fotograma. La posición, la opacidad y el
+   barrido de entrada se calculan en función del tiempo con una curva `easeOutCubic`.
 2. `fontTools` convierte cada letra de Poppins en un `<path>`, así que el resultado no
    depende de que la fuente esté instalada. De paso mide el ancho real del nombre para
    ajustar el cuerpo de letra y que nunca se desborde de la barra.
@@ -109,21 +115,22 @@ ffprobe -v error -show_streams overlay-loon_vt.webm | grep alpha_mode   # alpha_
 
 ## Qué puedes tocar
 
-En `overlay.py`, arriba del todo:
+En `src/overlay/constants.py`:
 
 - `POSITIONS`: las tres alturas de la barra en píxeles.
 - `MAXW`: ancho máximo de la barra. Está en 822 para no chocar con la columna de
   botones de TikTok y Reels.
 - `VIOLET`, `GREEN`, `INK`: la paleta.
 - `NAME_MAX_2` y `NAME_MAX_1`: cuerpo de letra máximo con dos plataformas o con una.
-- En `frame_svg`, los tramos `_seg(t, inicio, fin)` controlan el tiempo de cada
-  elemento de la entrada.
+
+En `src/overlay/svg.py`, dentro de `frame_svg`, los tramos `_seg(t, inicio, fin)` (en
+`src/overlay/animation.py`) controlan el tiempo de cada elemento de la entrada.
 
 ## Fuentes
 
-Poppins está incluida en `fonts/` bajo licencia SIL Open Font License 1.1.
+Poppins está incluida en `src/fonts/` bajo licencia SIL Open Font License 1.1.
 Puedes cambiarla por cualquier otro `.ttf`: reemplaza los archivos y ajusta el
-diccionario `FONTS`.
+diccionario `FONTS` en `src/overlay/typography.py`.
 
 ## Si algo falla
 

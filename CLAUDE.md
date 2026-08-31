@@ -26,18 +26,41 @@ sale de ahí. Si una modificación rompe esa idea, probablemente esté mal.
 ## 2. Mapa de archivos
 
 ```
-overlay.py          Motor completo. Sin dependencias de FastAPI. Ejecutable como CLI.
-app.py              Servidor FastAPI. Solo traduce HTTP <-> Config. Sin lógica de dibujo.
-static/index.html   Interfaz. Una sola página, sin framework ni paso de build.
-fonts/              Poppins Bold, Medium y Light (OFL 1.1) + su nota de licencia.
-requirements.txt    resvg-py es el rasterizador; cairosvg está comentado como alternativa.
-README.md           Para quien va a usar la app.
-CONTEXTO.md         Resumen corto de decisiones. Este archivo es la versión larga.
+src/overlay/             Paquete del motor. Sin dependencias de FastAPI. Ejecutable como CLI.
+  __init__.py              Reexporta la API publica (Config, layout, frame_svg, render_webm...).
+  constants.py             Lienzo, paleta y tiempos. Los numeros magicos viven aqui, y solo aqui.
+  typography.py            measure(), text_path(): la fuente convertida a trazos.
+  config.py                Config y su unico validador, clean().
+  layout.py                layout(cfg): toda la geometria resuelta en un solo lugar.
+  icons.py                 twitch_icon(), kick_icon(): formas propias, no los logos oficiales.
+  animation.py             anim_state(t, cfg, L): unica fuente de verdad de la animacion.
+  svg.py                   frame_svg(): arma el SVG completo a partir de las piezas anteriores.
+  raster.py                raster_engine(), rasterize(): SVG -> PNG con alfa.
+  render.py                render_webm(): fotogramas en paralelo + ffmpeg -> WebM.
+  __main__.py              CLI: python -m overlay --twitch ... --kick ...
+src/app.py               Servidor FastAPI. Solo traduce HTTP <-> Config. Sin lógica de dibujo.
+src/static/index.html    Esqueleto de la interfaz. Sin framework ni paso de build.
+src/static/style.css     Estilos de la interfaz.
+src/static/app.js        Lógica de la interfaz (estado, validación, fetch a la API).
+src/fonts/               Poppins Bold, Medium y Light (OFL 1.1) + su nota de licencia.
+requirements.txt         resvg-py es el rasterizador; cairosvg está comentado como alternativa.
+docs/README.md           Para quien va a usar la app.
+docs/CONTEXTO.md         Resumen corto de decisiones. Este archivo es la versión larga.
 ```
 
-`overlay.py` es el único archivo con lógica de verdad. `app.py` deliberadamente no
-sabe nada de SVG ni de geometría: si te encuentras escribiendo coordenadas en
-`app.py`, algo se salió de lugar.
+`src/overlay/` es el único paquete con lógica de verdad, dividido por responsabilidad (ver
+§4). `src/app.py` deliberadamente no sabe nada de SVG ni de geometría: si te encuentras
+escribiendo coordenadas en `app.py`, algo se salió de lugar.
+
+Los módulos de `overlay/` calculan la ruta a `fonts/` a partir de su propio `__file__`
+(ver `typography.py`), por eso el paquete y `fonts/` viven juntos dentro de `src/`. Lo
+mismo pasa con `app.py` y `static/`. Si alguno se mueve solo, esas rutas dejan de
+coincidir. `CLAUDE.md` y `requirements.txt` se quedan en la raíz porque ahí es donde las
+herramientas (pip, Claude Code) los buscan por convención.
+
+`import overlay` sigue funcionando igual que cuando era un solo archivo: `__init__.py`
+reexporta toda la API pública, así que `app.py` no tuvo que cambiar una sola línea al
+partirlo en módulos.
 
 ---
 
@@ -74,7 +97,13 @@ Mismo SVG, mismas funciones de animación.
 
 ## 4. El motor, por partes
 
-### 4.1 Tipografía convertida a trazos (`measure`, `text_path`)
+El paquete `src/overlay/` sigue el mismo orden que esta sección: cada `4.N` corresponde
+a un módulo. `frame_svg()` (§4.5, en `svg.py`) es el que importa y conecta todo lo
+demás; el resto de los módulos no se conocen entre sí más de lo necesario
+(`layout.py` importa `typography.py`, `svg.py` importa `layout.py`/`animation.py`/
+`icons.py`/`typography.py`, y así).
+
+### 4.1 Tipografía convertida a trazos (`typography.py`: `measure`, `text_path`)
 
 No se usa `<text>` en ninguna parte. `fontTools` abre el `.ttf`, saca el contorno de
 cada glifo con `SVGPathPen` y lo escribe como `<path>` con un `transform` que aplica
@@ -94,7 +123,7 @@ ancho medido. No existe `text-anchor` porque no hay elementos de texto.
 Si cambias de fuente: reemplaza los `.ttf` y ajusta el diccionario `FONTS`. Nada más
 depende del nombre del archivo.
 
-### 4.2 `Config` y `clean()`
+### 4.2 `Config` y `clean()` (`config.py`)
 
 Un dataclass plano con todo lo que el usuario puede elegir. `clean()` es el único
 lugar donde se validan y normalizan los valores: recorta espacios, convierte cadenas
@@ -110,7 +139,7 @@ motivo.
 `clean()` devuelve una **Config nueva**, no muta. Las funciones de dibujo asumen que
 reciben una config ya limpia.
 
-### 4.3 `layout(cfg)` — toda la geometría en un solo lugar
+### 4.3 `layout(cfg)` — toda la geometría en un solo lugar (`layout.py`)
 
 Devuelve un diccionario con las coordenadas ya resueltas. Ninguna otra función
 calcula posiciones: si necesitas una coordenada nueva, se agrega aquí.
@@ -131,7 +160,7 @@ Orden en que decide las cosas, que importa:
    la barra completa como región de tinte.
 5. **Etiqueta de arriba (`lab_x`).** Sigue la alineación de la barra.
 
-Constantes que puedes tocar sin romper nada, todas arriba del archivo:
+Constantes que puedes tocar sin romper nada, todas en `constants.py`:
 
 | Constante | Qué es | Cuidado |
 | --- | --- | --- |
@@ -145,7 +174,7 @@ Constantes que puedes tocar sin romper nada, todas arriba del archivo:
 | `VIOLET`, `GREEN`, `INK` | Paleta | |
 | `INTRO` | Duración de la entrada, en segundos | Compartida por video y vista previa |
 
-### 4.4 `anim_state(t, cfg, L)` — la única fuente de verdad de la animación
+### 4.4 `anim_state(t, cfg, L)` — la única fuente de verdad de la animación (`animation.py`)
 
 Función pura: recibe el segundo `t` y devuelve un diccionario con el estado visual en
 ese instante.
@@ -174,14 +203,15 @@ entre dos segundos y le aplica la curva.
 
 1. Un `elif kind == "loquesea":` dentro de `anim_state`, escribiendo en las claves de
    `st`. No agregues claves nuevas sin revisar `frame_svg`, que es quien las consume.
-2. Una entrada en el diccionario `ANIMATIONS` (nombre interno → etiqueta visible).
-   `clean()` valida contra ese diccionario, así que sin esto la opción se ignora.
-3. Un `<option>` en el `<select id="animation">` de `index.html`.
+2. Una entrada en el diccionario `ANIMATIONS` de `constants.py` (nombre interno →
+   etiqueta visible). `clean()` valida contra ese diccionario, así que sin esto la
+   opción se ignora.
+3. Un `<option>` en el `<select id="animation">` de `static/index.html`.
 
 No hace falta tocar el rasterizado, el SMIL ni ffmpeg. La vista previa animada sale
 gratis, por el mecanismo de §4.5.
 
-### 4.5 `frame_svg(t, cfg, cycle=None)` — arma el SVG
+### 4.5 `frame_svg(t, cfg, cycle=None)` — arma el SVG (`svg.py`)
 
 Con `cycle=None` devuelve el fotograma del segundo `t`, estático. Es lo que consume
 el render de video.
@@ -215,15 +245,16 @@ El sándwich de traslaciones alrededor del `scale` es lo que hace que la barra e
 desde su propio centro y no desde la esquina del lienzo. Si agregas un grupo, cuenta
 los `</g>` del final: son seis y están todos en una sola línea.
 
-### 4.6 Rasterizado y render
+### 4.6 Rasterizado y render (`raster.py`, `render.py`)
 
 `raster_engine()` prueba `resvg_py` y luego `cairosvg`, memoriza el resultado y, si no
 hay ninguno, lanza un error con las instrucciones de instalación. `rasterize()`
-despacha al que haya.
+despacha al que haya. Las dos viven en `raster.py`.
 
-`render_webm()` reparte los fotogramas entre procesos con `ProcessPoolExecutor` y
-después llama a ffmpeg. Cada worker reconstruye la `Config` desde un dict porque los
-argumentos tienen que ser serializables.
+`render_webm()`, en `render.py`, reparte los fotogramas entre procesos con
+`ProcessPoolExecutor` y después llama a ffmpeg. Cada worker (`_worker`, en el mismo
+archivo) reconstruye la `Config` desde un dict porque los argumentos tienen que ser
+serializables entre procesos.
 
 Los parámetros de ffmpeg no son negociables si quieres conservar el alfa:
 `-c:v libvpx-vp9 -pix_fmt yuva420p -auto-alt-ref 0`.
@@ -232,27 +263,37 @@ Los parámetros de ffmpeg no son negociables si quieres conservar el alfa:
 
 ## 5. La interfaz
 
-Una sola página, sin dependencias. Vale la pena mantenerla así.
+Sin framework ni paso de build, pero dividida en tres archivos por tipo, todos dentro
+de `src/static/`:
 
-Piezas: dos bloques de plataforma con interruptor y campo de nombre, los controles
-(texto, animación, altura, alineación, duración), el botón, y a la derecha un
-escenario 9:16 con la vista previa sobre un fondo intercambiable entre cuadros,
-oscuro y claro, para revisar contraste.
+- `index.html` — el esqueleto: los dos bloques de plataforma con interruptor y campo
+  de nombre, los controles (texto, animación, altura, alineación, duración), el botón,
+  y a la derecha un escenario 9:16 con la vista previa sobre un fondo intercambiable
+  entre cuadros, oscuro y claro, para revisar contraste. Enlaza a los otros dos con
+  `<link rel="stylesheet" href="/static/style.css">` y `<script src="/static/app.js">`.
+- `style.css` — todo el CSS, sin cambios de comportamiento.
+- `app.js` — toda la lógica:
+  - `estado()` junta el formulario en el mismo objeto que espera la API.
+  - `validar()` decide el mensaje de error y si el botón va deshabilitado.
+  - `refrescar()` sincroniza el aspecto de los bloques, valida, y con 220 ms de retraso
+    actualiza el `src` de la vista previa. Si la validación falla, quita el `src` para
+    no dejar una imagen rota.
+  - Mientras no edites el campo de Kick a mano, se copia lo que escribes en Twitch. Si
+    lo vacías, vuelve a copiarse. La bandera es `kickTocado`.
 
-- `estado()` junta el formulario en el mismo objeto que espera la API.
-- `validar()` decide el mensaje de error y si el botón va deshabilitado.
-- `refrescar()` sincroniza el aspecto de los bloques, valida, y con 220 ms de retraso
-  actualiza el `src` de la vista previa. Si la validación falla, quita el `src` para
-  no dejar una imagen rota.
-- Mientras no edites el campo de Kick a mano, se copia lo que escribes en Twitch. Si
-  lo vacías, vuelve a copiarse. La bandera es `kickTocado`.
+`app.py` sirve `index.html` con una ruta propia (`GET /`, lee el archivo y lo devuelve
+como `HTMLResponse`) y monta `/static` con `StaticFiles` para que el navegador pueda
+pedir `style.css` y `app.js` por su cuenta. Si agregas un archivo nuevo dentro de
+`static/`, no hace falta tocar el montaje: ya sirve toda la carpeta.
 
 **Agregar un control nuevo toca cuatro lugares, en este orden:**
 
-1. `overlay.py`: campo en `Config`, normalización en `clean()`, y el uso donde toque.
+1. `overlay/config.py`: campo en `Config`, normalización en `clean()`. Si el valor
+   viene de una constante nueva, agrégala en `overlay/constants.py`.
 2. `app.py`: campo en `RenderIn` y parámetro en `preview()`.
-3. `index.html`: el elemento, su `id` en la lista de escuchas, y una línea en `estado()`.
-4. El `argparse` del final de `overlay.py`, si tiene sentido desde el CLI.
+3. `static/index.html`: el elemento y su `id`; `static/app.js`: el `id` en la lista de
+   escuchas y una línea en `estado()`.
+4. `overlay/__main__.py`: el argumento de `argparse`, si tiene sentido desde el CLI.
 
 Olvidar el paso 2 es el error silencioso más probable: la interfaz manda el valor, el
 servidor lo ignora y no falla nada.
@@ -309,11 +350,15 @@ respeta sus reglas de uso.
 
 ## 8. Cómo probar un cambio
 
+Los comandos de Python se ejecutan parado en `src/` (es donde el paquete `overlay`
+puede importarse directo).
+
 ```bash
 # ¿arranca y qué motor tiene?
 curl http://127.0.0.1:8000/health
 
 # geometría, sin levantar el servidor
+cd src
 python -c "from overlay import Config, layout; print(layout(Config('Loon_VT','LoonVT').clean()))"
 
 # un fotograma suelto a PNG, para mirarlo
@@ -321,8 +366,8 @@ python -c "
 from overlay import Config, frame_svg, rasterize
 rasterize(frame_svg(0.4, Config('Loon_VT','LoonVT').clean()), 'prueba.png')"
 
-# el video, por CLI
-python overlay.py --twitch Loon_VT --kick LoonVT --animation rebote --duration 4
+# el video, por CLI (python -m, porque overlay ahora es un paquete)
+python -m overlay --twitch Loon_VT --kick LoonVT --animation rebote --duration 4
 
 # ¿sobrevivió el alfa?
 ffprobe -v error -show_streams overlay-loon_vt.webm | grep alpha_mode
@@ -348,10 +393,13 @@ funciones puras y el sitio obvio por donde empezar.
 - Comentarios y mensajes al usuario en español. En los comentarios del código se
   evitan las tildes para no depender de la codificación del terminal; en los textos
   que ve el usuario, sí se usan.
-- `overlay.py` no importa nada de FastAPI. Tiene que seguir funcionando como CLI
-  suelto.
-- Los números mágicos viven como constantes arriba de `overlay.py`, no dispersos en
-  las funciones de dibujo.
+- El paquete `overlay/` no importa nada de FastAPI. Tiene que seguir funcionando
+  como CLI suelto (`python -m overlay`).
+- Los números mágicos viven como constantes en `overlay/constants.py`, no dispersos
+  en las funciones de dibujo.
+- Cada módulo de `overlay/` tiene una sola responsabilidad (ver §4). Si una función
+  nueva no encaja claramente en ninguno de los existentes, es una señal de que hace
+  falta un módulo nuevo, no de que hay que forzarla en uno que no le corresponde.
 - Los archivos generados (`.webm`, `.mov`, `frames/`) están en el `.gitignore`.
 
 ---

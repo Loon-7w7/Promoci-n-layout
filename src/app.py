@@ -24,6 +24,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI(title="Overlay Twitch/Kick")
 app.mount("/fonts", StaticFiles(directory=os.path.join(BASE, "fonts")), name="fonts")
+app.mount("/static", StaticFiles(directory=os.path.join(BASE, "static")), name="static")
 
 
 class RenderIn(BaseModel):

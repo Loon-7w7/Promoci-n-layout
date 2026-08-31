@@ -1,0 +1,500 @@
+<title>Guía del overlay — mapa del proyecto</title>
+<style>
+  :root{
+    --ink:#07070a;
+    --surface:#100f17;
+    --surface-2:#17151f;
+    --line:#28242f;
+    --violet:#7c3aed;
+    --violet-soft:#a78bfa;
+    --violet-deep:#5b21b6;
+    --green:#53fc18;
+    --warn:#f5a524;
+    --text:#ebe8f2;
+    --text-dim:#948fa8;
+    --text-faint:#5f5b70;
+    --mono: ui-monospace, "Cascadia Mono", "Consolas", "SFMono-Regular", Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+
+  body{
+    background:
+      radial-gradient(1200px 600px at 12% -10%, rgba(124,58,237,0.16), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(83,252,24,0.07), transparent 55%),
+      var(--ink);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:inherit; }
+  ::selection{ background:var(--violet-deep); color:#fff; }
+
+  code, .mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+
+  /* ---------- shell ---------- */
+  .shell{
+    display:grid;
+    grid-template-columns: 268px minmax(0,1fr);
+    max-width:1280px;
+    margin:0 auto;
+  }
+  @media (max-width: 900px){
+    .shell{ grid-template-columns: 1fr; }
+    .nav{ position:static; height:auto; border-right:none; border-bottom:1px solid var(--line); }
+  }
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:sticky; top:0; height:100vh;
+    overflow-y:auto;
+    border-right:1px solid var(--line);
+    padding:32px 20px 40px;
+    display:flex; flex-direction:column; gap:22px;
+  }
+  .nav-brand{
+    display:flex; align-items:center; gap:10px;
+    padding-bottom:16px; border-bottom:1px solid var(--line);
+  }
+  .nav-mark{
+    width:30px; height:30px; border-radius:8px; flex:none;
+    background:linear-gradient(135deg, var(--violet) 48%, var(--green) 52%);
+  }
+  .nav-brand-text{ font-size:12.5px; color:var(--text-dim); line-height:1.35; }
+  .nav-brand-text b{ display:block; color:var(--text); font-size:14px; font-weight:650; letter-spacing:-0.01em; }
+
+  .nav-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:1px; }
+  .nav-list a{
+    display:flex; gap:10px; align-items:baseline;
+    text-decoration:none; padding:7px 8px; border-radius:6px;
+    font-size:13px; color:var(--text-dim);
+    transition:background .12s ease, color .12s ease;
+  }
+  .nav-list a:hover{ background:var(--surface-2); color:var(--text); }
+  .nav-list a:focus-visible{ outline:2px solid var(--violet-soft); outline-offset:2px; }
+  .nav-list .n{ font-family:var(--mono); font-size:11px; color:var(--text-faint); width:16px; flex:none; }
+
+  .nav-foot{ margin-top:auto; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--text-faint); }
+  .nav-foot code{ color:var(--text-dim); }
+
+  /* ---------- main ---------- */
+  main{ padding:56px 56px 120px; min-width:0; }
+  @media (max-width: 900px){ main{ padding:36px 22px 90px; } }
+
+  .hero{ max-width:640px; margin-bottom:56px; }
+  .hero-eyebrow{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--violet-soft); margin-bottom:14px;
+  }
+  .hero h1{
+    font-size:clamp(28px, 4vw, 38px); line-height:1.12; letter-spacing:-0.02em;
+    margin:0 0 14px; font-weight:650; text-wrap:balance;
+  }
+  .hero p{ color:var(--text-dim); font-size:15.5px; max-width:56ch; margin:0; }
+  .hero-rule{
+    margin-top:26px; height:3px; width:120px; border-radius:2px;
+    background:linear-gradient(90deg, var(--violet) 0%, var(--violet) 46%, var(--green) 54%, var(--green) 100%);
+  }
+
+  section{ margin-bottom:60px; scroll-margin-top:28px; }
+  section > .sec-head{
+    display:flex; align-items:baseline; gap:12px;
+    margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--line);
+  }
+  .sec-head .n{ font-family:var(--mono); font-size:13px; color:var(--text-faint); }
+  .sec-head h2{ font-size:19px; margin:0; font-weight:650; letter-spacing:-0.01em; }
+  .sec-sub{ margin:-8px 0 20px; color:var(--text-dim); font-size:14px; max-width:62ch; }
+
+  .prose{ max-width:66ch; color:var(--text-dim); font-size:14.5px; }
+  .prose strong{ color:var(--text); font-weight:600; }
+  .prose + .prose{ margin-top:10px; }
+
+  /* ---------- cards / grid ---------- */
+  .grid{ display:grid; gap:12px; }
+  .grid-2{ grid-template-columns:repeat(2,1fr); }
+  .grid-3{ grid-template-columns:repeat(3,1fr); }
+  @media (max-width: 780px){ .grid-2, .grid-3{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:16px 18px;
+  }
+  .card h3{ margin:0 0 6px; font-size:13.5px; font-weight:650; }
+  .card p{ margin:0; font-size:13px; color:var(--text-dim); }
+  .card code{ font-size:12px; color:var(--violet-soft); }
+
+  /* file map */
+  .filemap{ display:flex; flex-direction:column; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .filemap-row{
+    display:grid; grid-template-columns:200px 1fr;
+    padding:11px 16px; font-size:13px;
+    background:var(--surface);
+  }
+  .filemap-row:not(:last-child){ border-bottom:1px solid var(--line); }
+  .filemap-row:nth-child(odd){ background:var(--surface-2); }
+  .filemap-row .path{ font-family:var(--mono); color:var(--green); font-size:12.5px; }
+  .filemap-row .desc{ color:var(--text-dim); }
+
+  /* flow */
+  .flow{
+    border:1px solid var(--line); border-radius:10px; background:var(--surface);
+    padding:20px 22px; display:flex; flex-direction:column; gap:0;
+  }
+  .flow-title{ font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); margin-bottom:14px; }
+  .flow-step{ display:flex; gap:14px; align-items:flex-start; padding:9px 0; }
+  .flow-step .dot{ width:8px; height:8px; border-radius:50%; margin-top:6px; flex:none; background:var(--violet-soft); }
+  .flow-step .body b{ font-family:var(--mono); font-size:13px; color:var(--text); font-weight:600; }
+  .flow-step .body span{ display:block; font-size:12.5px; color:var(--text-dim); margin-top:2px; }
+  .flow-arrow{ margin-left:3px; padding:2px 0 2px 0; color:var(--text-faint); font-size:12px; font-family:var(--mono); }
+  .flow-note{
+    margin-top:12px; padding-top:12px; border-top:1px dashed var(--line);
+    font-size:12.5px; color:var(--violet-soft);
+  }
+
+  /* constants table */
+  table.consts{ width:100%; border-collapse:collapse; font-size:13px; }
+  table.consts th{
+    text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:500; padding:0 12px 10px; border-bottom:1px solid var(--line);
+  }
+  table.consts td{ padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.consts tr:last-child td{ border-bottom:none; }
+  table.consts .k{ font-family:var(--mono); color:var(--green); white-space:nowrap; }
+  table.consts .v{ color:var(--text-dim); }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  .table-wrap table{ min-width:520px; }
+  .table-wrap table.consts th:first-child, .table-wrap table.consts td:first-child{ padding-left:16px; }
+
+  /* animation state keys */
+  .keys{ display:flex; flex-wrap:wrap; gap:7px; margin:14px 0 0; }
+  .key{
+    font-family:var(--mono); font-size:12px; padding:4px 9px; border-radius:6px;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--violet-soft);
+  }
+
+  /* callouts */
+  .callout{ border-radius:10px; padding:16px 18px; border:1px solid; margin-bottom:12px; }
+  .callout h4{ margin:0 0 6px; font-size:13px; font-weight:650; display:flex; align-items:center; gap:8px; }
+  .callout p{ margin:0; font-size:13px; color:var(--text-dim); }
+  .callout code{ font-size:12px; }
+
+  .callout.rule{ background:rgba(245,165,36,0.06); border-color:rgba(245,165,36,0.28); }
+  .callout.rule h4{ color:var(--warn); }
+  .callout.rule .tag{
+    font-family:var(--mono); font-size:10px; letter-spacing:.05em; text-transform:uppercase;
+    background:rgba(245,165,36,0.16); color:var(--warn); padding:2px 7px; border-radius:4px;
+  }
+
+  .callout.bug{ background:var(--surface); border-color:var(--line); }
+  .callout.bug h4{ color:var(--text); }
+  .callout.bug .tag{
+    font-family:var(--mono); font-size:10px; letter-spacing:.05em; text-transform:uppercase;
+    background:var(--surface-2); color:var(--text-faint); padding:2px 7px; border-radius:4px; border:1px solid var(--line);
+  }
+
+  /* steps (agregar control) */
+  .steps{ counter-reset:s; display:flex; flex-direction:column; gap:10px; }
+  .step{ display:flex; gap:14px; }
+  .step::before{
+    counter-increment:s; content:counter(s);
+    font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--violet-soft);
+    width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    flex:none; margin-top:1px; font-weight:700;
+  }
+  .step p{ margin:0; font-size:13.5px; color:var(--text-dim); padding-top:2px; }
+  .step p code{ color:var(--text); }
+
+  /* checks */
+  .checks{ display:flex; flex-direction:column; gap:8px; }
+  .check{ display:flex; gap:10px; font-size:13.5px; color:var(--text-dim); align-items:flex-start; }
+  .check .num{ font-family:var(--mono); font-size:11.5px; color:var(--text-faint); width:16px; flex:none; padding-top:1px; }
+
+  /* pending */
+  .pending{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px; }
+  .pending li{
+    display:flex; gap:10px; align-items:flex-start; font-size:13.5px; color:var(--text-dim);
+    padding:11px 14px; border:1px solid var(--line); border-radius:8px; background:var(--surface);
+  }
+  .pending li::before{ content:"→"; color:var(--green); font-family:var(--mono); flex:none; }
+
+  code.inline{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:4px;
+    padding:1px 6px; font-size:12.5px; color:var(--text);
+  }
+
+  pre.block{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:16px 18px; overflow-x:auto; font-size:12.5px; color:var(--text-dim);
+    font-family:var(--mono); line-height:1.6; margin:0;
+  }
+  pre.block .c1{ color:var(--text-faint); }
+  pre.block .fn{ color:var(--violet-soft); }
+  pre.block .str{ color:var(--green); }
+
+  footer{ max-width:640px; padding-top:24px; border-top:1px solid var(--line); font-size:12.5px; color:var(--text-faint); }
+</style>
+
+<div class="shell">
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="nav-mark"></div>
+      <div class="nav-brand-text"><b>overlay.py</b>guía técnica — proyecto local</div>
+    </div>
+    <ul class="nav-list">
+      <li><a href="#s1"><span class="n">01</span> Qué hace esto</a></li>
+      <li><a href="#s2"><span class="n">02</span> Mapa de archivos</a></li>
+      <li><a href="#s3"><span class="n">03</span> Flujo de una petición</a></li>
+      <li><a href="#s4"><span class="n">04</span> El motor, por partes</a></li>
+      <li><a href="#s5"><span class="n">05</span> La interfaz</a></li>
+      <li><a href="#s6"><span class="n">06</span> Restricciones no negociables</a></li>
+      <li><a href="#s7"><span class="n">07</span> Cosas que ya nos mordieron</a></li>
+      <li><a href="#s8"><span class="n">08</span> Cómo probar un cambio</a></li>
+      <li><a href="#s9"><span class="n">09</span> Convenios</a></li>
+      <li><a href="#s10"><span class="n">10</span> Ideas pendientes</a></li>
+    </ul>
+    <div class="nav-foot">Fuente: <code>CLAUDE.md</code> del repo. Este panel solo lo reordena — el original manda.</div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <div class="hero-eyebrow">Twitch · Kick — overlay WebM con alfa</div>
+      <h1>Todo el CLAUDE.md, separado y ordenado por tema</h1>
+      <p>Motor único en <code class="inline">overlay.py</code>, servido por una app web y un CLI. Diez bloques, de la idea general a los detalles que ya costó trabajo aprender.</p>
+      <div class="hero-rule"></div>
+    </div>
+
+    <!-- 1 -->
+    <section id="s1">
+      <div class="sec-head"><span class="n">01</span><h2>Qué hace esto</h2></div>
+      <div class="prose">Genera un overlay de <strong>"sígueme en Twitch y Kick"</strong> para video vertical: un WebM de <strong>1080×1920 con canal alfa</strong> y una animación de entrada, pensado para arrastrarse a una pista superior en Filmora sin chroma ni recortes.</div>
+      <div class="prose">Dos formas de usarlo: una <strong>app web local</strong> (FastAPI + una página HTML) y un <strong>CLI</strong> sobre el mismo motor.</div>
+      <div class="callout rule" style="margin-top:16px;">
+        <h4><span class="tag">restricción central</span></h4>
+        <p>El overlay no cubre la pantalla: convive con el video de atrás. Fondo semitransparente, sombras, zona segura y ancho máximo salen todos de esa idea. Si un cambio la rompe, probablemente esté mal.</p>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section id="s2">
+      <div class="sec-head"><span class="n">02</span><h2>Mapa de archivos</h2></div>
+      <div class="filemap">
+        <div class="filemap-row"><span class="path">overlay.py</span><span class="desc">Motor completo. Sin dependencias de FastAPI. Ejecutable como CLI.</span></div>
+        <div class="filemap-row"><span class="path">app.py</span><span class="desc">Servidor FastAPI. Solo traduce HTTP ↔ Config. Sin lógica de dibujo.</span></div>
+        <div class="filemap-row"><span class="path">static/index.html</span><span class="desc">Interfaz. Una sola página, sin framework ni paso de build.</span></div>
+        <div class="filemap-row"><span class="path">fonts/</span><span class="desc">Poppins Bold, Medium y Light (OFL 1.1) + nota de licencia.</span></div>
+        <div class="filemap-row"><span class="path">requirements.txt</span><span class="desc">resvg-py como rasterizador; cairosvg comentado como alternativa.</span></div>
+        <div class="filemap-row"><span class="path">README.md</span><span class="desc">Para quien va a usar la app.</span></div>
+        <div class="filemap-row"><span class="path">CONTEXTO.md</span><span class="desc">Resumen corto de decisiones — este panel es la versión larga.</span></div>
+      </div>
+      <div class="prose" style="margin-top:14px;"><code class="inline">overlay.py</code> es el único archivo con lógica de verdad. Si aparecen coordenadas o geometría dentro de <code class="inline">app.py</code>, algo se salió de lugar.</div>
+    </section>
+
+    <!-- 3 -->
+    <section id="s3">
+      <div class="sec-head"><span class="n">03</span><h2>Flujo de una petición</h2></div>
+      <div class="sec-sub">La única diferencia entre los dos caminos es el argumento <code class="inline">cycle</code> de <code class="inline">frame_svg</code>. Mismo SVG, mismas funciones de animación.</div>
+      <div class="grid grid-2">
+        <div class="flow">
+          <div class="flow-title">Vista previa — GET /preview.svg</div>
+          <div class="flow-step"><span class="dot"></span><div class="body"><b>app.py: preview()</b><span>recibe twitch, kick, animate…</span></div></div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step"><span class="dot" style="background:var(--green)"></span><div class="body"><b>Config(...).clean()</b><span>valida y normaliza</span></div></div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step"><span class="dot"></span><div class="body"><b>frame_svg(99.0, cfg, cycle=3.4)</b><span>SVG + animaciones SMIL</span></div></div>
+          <div class="flow-note">El navegador reproduce la entrada en bucle, sin video de por medio.</div>
+        </div>
+        <div class="flow">
+          <div class="flow-title">Render — POST /render</div>
+          <div class="flow-step"><span class="dot"></span><div class="body"><b>app.py: render()</b><span>twitch, kick, label, position, align…</span></div></div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step"><span class="dot" style="background:var(--green)"></span><div class="body"><b>render_webm(cfg, ruta_temporal)</b><span>180 llamadas a frame_svg(t, cfg)</span></div></div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step"><span class="dot"></span><div class="body"><b>rasterize() en paralelo</b><span>cada fotograma a PNG con alfa</span></div></div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step"><span class="dot"></span><div class="body"><b>ffmpeg</b><span>junta los PNG en WebM VP9 yuva420p</span></div></div>
+          <div class="flow-note">FileResponse; el temporal se borra después.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section id="s4">
+      <div class="sec-head"><span class="n">04</span><h2>El motor, por partes</h2></div>
+
+      <div class="grid grid-3" style="margin-bottom:12px;">
+        <div class="card">
+          <h3>4.1 — Tipografía como trazos</h3>
+          <p>Sin <code>&lt;text&gt;</code> en ninguna parte. fontTools abre el <code>.ttf</code>, saca cada glifo con <code>SVGPathPen</code> y lo escribe como <code>&lt;path&gt;</code>. Independiza el render de las fuentes del sistema y permite <code>measure()</code>: saber el ancho real antes de dibujar, base del ajuste automático de letra.</p>
+        </div>
+        <div class="card">
+          <h3>4.2 — Config y clean()</h3>
+          <p>Dataclass plano con todo lo elegible. <code>clean()</code> es el único validador: recorta, normaliza, cae a defaults. Devuelve una <strong>Config nueva</strong>, nunca muta. Si <code>twitch</code> y <code>kick</code> quedan ambos en <code>None</code>, lanza <code>ValueError</code> — el "al menos una plataforma".</p>
+        </div>
+        <div class="card">
+          <h3>4.6 — Rasterizado y render</h3>
+          <p><code>raster_engine()</code> prueba resvg_py y luego cairosvg, memoriza el resultado. <code>render_webm()</code> reparte fotogramas con <code>ProcessPoolExecutor</code>. Cada worker reconstruye la Config desde un dict serializable.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px;">
+        <h3>4.3 — layout(cfg): toda la geometría en un solo lugar</h3>
+        <p style="margin-bottom:10px;">Ninguna otra función calcula posiciones. Decide en este orden, porque cada paso depende del anterior:</p>
+        <div class="checks">
+          <div class="check"><span class="num">1</span><span><strong>Ancho</strong> — dos plataformas: siempre <code class="inline">MAXW</code>. Una sola: entre 420 y <code class="inline">MAXW</code>, según contenido.</span></div>
+          <div class="check"><span class="num">2</span><span><strong>Cuerpo de letra</strong> — se compara el espacio disponible con el ancho medido del nombre más largo; se reduce con piso en <code class="inline">NAME_MIN</code>.</span></div>
+          <div class="check"><span class="num">3</span><span><strong>Posición horizontal (bx)</strong> — se resuelve después del ancho, por eso centrar funciona aunque la barra se haya encogido.</span></div>
+          <div class="check"><span class="num">4</span><span><strong>Costura diagonal (seam)</strong> — solo con dos plataformas. Con una sola es <code class="inline">None</code> y se usa la barra completa como región de tinte.</span></div>
+          <div class="check"><span class="num">5</span><span><strong>Etiqueta de arriba (lab_x)</strong> — sigue la alineación de la barra.</span></div>
+        </div>
+      </div>
+
+      <div class="table-wrap" style="margin-bottom:12px;">
+        <table class="consts">
+          <thead><tr><th>Constante</th><th>Qué es</th><th>Cuidado</th></tr></thead>
+          <tbody>
+            <tr><td class="k">W, H</td><td class="v">Lienzo, 1080×1920</td><td class="v">Cambiarlo implica revisar POSITIONS</td></tr>
+            <tr><td class="k">MARGIN</td><td class="v">Margen lateral mínimo</td><td class="v">—</td></tr>
+            <tr><td class="k">MAXW</td><td class="v">Ancho máximo de la barra</td><td class="v">No subir de 822 sin pensarlo → §06</td></tr>
+            <tr><td class="k">BH, BR</td><td class="v">Alto y radio de la barra</td><td class="v">—</td></tr>
+            <tr><td class="k">PAD, ICON, GAPIT, CGAP</td><td class="v">Espaciado interno</td><td class="v">Alimentan el cálculo de avail</td></tr>
+            <tr><td class="k">POSITIONS</td><td class="v">Las tres alturas en píxeles</td><td class="v">—</td></tr>
+            <tr><td class="k">NAME_MAX_2 / _1, NAME_MIN</td><td class="v">Rango del cuerpo de letra</td><td class="v">_1 se usa con una sola plataforma</td></tr>
+            <tr><td class="k">VIOLET, GREEN, INK</td><td class="v">Paleta</td><td class="v">—</td></tr>
+            <tr><td class="k">INTRO</td><td class="v">Duración de la entrada, en segundos</td><td class="v">Compartida por video y vista previa</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-bottom:12px;">
+        <h3>4.4 — anim_state(t, cfg, L): fuente única de la animación</h3>
+        <p style="margin-bottom:6px;">Función pura: recibe el segundo <code>t</code> y devuelve el estado visual completo. El escalonado (Twitch entra primero, Kick después, la etiqueta al final) se colapsa cuando hay una sola plataforma.</p>
+        <div class="keys">
+          <span class="key">wipe</span><span class="key">tx / ty</span><span class="key">sx / sy</span><span class="key">op</span>
+          <span class="key">tw_dy / tw_op</span><span class="key">kk_dy / kk_op</span><span class="key">lb_dx / lb_dy / lb_op</span>
+        </div>
+        <p style="margin-top:12px;"><strong>Agregar una animación</strong> son tres pasos — no hace falta tocar rasterizado, SMIL ni ffmpeg:</p>
+        <div class="steps" style="margin-top:8px;">
+          <div class="step"><p>Un <code class="inline">elif kind == "loquesea":</code> dentro de <code class="inline">anim_state</code>, escribiendo en las claves de <code class="inline">st</code>.</p></div>
+          <div class="step"><p>Una entrada en <code class="inline">ANIMATIONS</code> (nombre interno → etiqueta visible) — <code class="inline">clean()</code> valida contra ese diccionario.</p></div>
+          <div class="step"><p>Un <code class="inline">&lt;option&gt;</code> en el <code class="inline">&lt;select id="animation"&gt;</code> de index.html.</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>4.5 — frame_svg(t, cfg, cycle=None): arma el SVG</h3>
+        <p style="margin-bottom:10px;"><code>cycle=None</code> → fotograma estático de ese segundo, para el video. <code>cycle=3.4</code> → estado final + animaciones SMIL, muestreando <code>anim_state</code> 26 veces. Vista previa y video <strong>no pueden desincronizarse</strong>: salen de la misma función.</p>
+        <pre class="block"><span class="c1">&lt;g opacity&gt;</span>              <span class="c1">← st["op"]</span>
+  <span class="c1">&lt;g translate&gt;</span>          <span class="c1">← st["tx"], st["ty"]</span>
+    <span class="c1">&lt;g translate(cx,cy)&gt;</span>       centro de la barra
+      <span class="c1">&lt;g scale&gt;</span>          <span class="c1">← st["sx"], st["sy"]</span>
+        <span class="c1">&lt;g translate(-cx,-cy)&gt;</span> vuelta al origen
+          <span class="c1">&lt;g clip-path=wipe&gt;</span>   <span class="c1">← st["wipe"]</span>
+             barra, tintes, costura, borde, bloques</pre>
+        <p style="margin-top:10px;">El sándwich de traslaciones alrededor del <code class="inline">scale</code> hace que la barra escale desde su propio centro. Son <strong>seis</strong> <code class="inline">&lt;/g&gt;</code> de cierre, todos en una línea — cuéntalos si agregas un grupo.</p>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section id="s5">
+      <div class="sec-head"><span class="n">05</span><h2>La interfaz</h2></div>
+      <div class="prose">Una sola página, sin dependencias: dos bloques de plataforma (interruptor + nombre), controles de texto/animación/altura/alineación/duración, el botón, y a la derecha un escenario 9:16 con fondo intercambiable (cuadros / oscuro / claro) para revisar contraste.</div>
+      <div class="grid grid-2" style="margin:16px 0;">
+        <div class="card"><h3>estado()</h3><p>Junta el formulario en el mismo objeto que espera la API.</p></div>
+        <div class="card"><h3>validar()</h3><p>Decide el mensaje de error y si el botón va deshabilitado.</p></div>
+        <div class="card"><h3>refrescar()</h3><p>Sincroniza los bloques, valida, y con 220 ms de retraso actualiza el <code>src</code> de la vista previa. Si falla la validación, quita el <code>src</code>.</p></div>
+        <div class="card"><h3>kickTocado</h3><p>Mientras no edites Kick a mano, copia lo que escribes en Twitch. Si lo vacías, vuelve a copiarse.</p></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:10px;">Agregar un control nuevo — en este orden</h3>
+        <div class="steps">
+          <div class="step"><p><code class="inline">overlay.py</code>: campo en Config, normalización en <code class="inline">clean()</code>, uso donde toque.</p></div>
+          <div class="step"><p><code class="inline">app.py</code>: campo en <code class="inline">RenderIn</code> y parámetro en <code class="inline">preview()</code>.</p></div>
+          <div class="step"><p><code class="inline">index.html</code>: el elemento, su <code class="inline">id</code> en los escuchas, una línea en <code class="inline">estado()</code>.</p></div>
+          <div class="step"><p>El <code class="inline">argparse</code> del final de <code class="inline">overlay.py</code>, si aplica desde el CLI.</p></div>
+        </div>
+        <p style="margin-top:12px; font-size:13px; color:var(--warn);">Olvidar el paso 2 es el error silencioso más probable: la interfaz manda el valor, el servidor lo ignora, y nada falla.</p>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section id="s6">
+      <div class="sec-head"><span class="n">06</span><h2>Restricciones que no son negociables</h2></div>
+      <div class="callout rule"><h4><span class="tag">zona segura</span></h4><p><code class="inline">MAXW = 822</code> y <code class="inline">MARGIN = 48</code> dejan libre la columna de botones de TikTok/Reels (≈ <code class="inline">x &gt; 880</code>). La altura "media" deja libre el tercio inferior de subtítulos. Ensanchar la barra los tapa.</p></div>
+      <div class="callout rule"><h4><span class="tag">legibilidad</span></h4><p>El fondo de la barra es negro al 62 %, no sólido, para que se siga viendo el video. Las sombras <code class="inline">#lift</code> y <code class="inline">#liftText</code> son las que salvan el contraste sobre escenas claras — quitarlas hace desaparecer el overlay sobre fondos brillantes.</p></div>
+      <div class="callout rule"><h4><span class="tag">filtros</span></h4><p>Todo filtro lleva <code class="inline">color-interpolation-filters="sRGB"</code>. Sin eso, resvg aplica las sombras en espacio lineal y el texto sale apagado — cairosvg lo ignoraba, así que el problema solo aparece al cambiar de motor.</p></div>
+      <div class="callout rule"><h4><span class="tag">iconos</span></h4><p>Son formas geométricas propias, no los logos oficiales de Twitch ni Kick. Usar los oficiales exige bajarlos de cada guía de marca y respetar sus reglas.</p></div>
+    </section>
+
+    <!-- 7 -->
+    <section id="s7">
+      <div class="sec-head"><span class="n">07</span><h2>Cosas que ya nos mordieron</h2></div>
+      <div class="callout bug"><h4><span class="tag">windows</span> cairosvg no arranca</h4><p>Falla con <code class="inline">no library called "cairo-2" was found</code>: busca DLL que el sistema no trae. Por eso el rasterizador principal es resvg-py (rueda de pip, sin nada externo). Alternativa: instalar GTK3 Runtime.</p></div>
+      <div class="callout bug"><h4><span class="tag">ffprobe</span> pix_fmt engañoso</h4><p>Reporta <code class="inline">yuv420p</code> aunque el alfa esté ahí — VP9 lo guarda en una pista aparte. Hay que mirar el tag <code class="inline">alpha_mode=1</code> con <code class="inline">ffprobe -show_streams</code>.</p></div>
+      <div class="callout bug"><h4><span class="tag">decodificación</span> alfa descartado</h4><p>Para leer un WebM con alfa hay que forzar el decodificador: <code class="inline">ffmpeg -vcodec libvpx-vp9 -i entrada.webm ...</code>. El nativo lo descarta y parece un archivo roto.</p></div>
+      <div class="callout bug"><h4><span class="tag">respaldo</span> ProRes 4444</h4><p>Filmora lo lee, pero 6 s pesan 31 MB contra 132 KB del WebM. Solo si alguien reporta que su instalación no digiere el WebM.</p></div>
+      <div class="callout bug"><h4><span class="tag">powershell</span> sin source</h4><p>El activador es <code class="inline">.\.venv\Scripts\Activate.ps1</code>. Si las directivas lo bloquean: <code class="inline">Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass</code>.</p></div>
+      <div class="callout bug"><h4><span class="tag">path</span> ffmpeg recién instalado</h4><p>No aparece hasta reiniciar la terminal — el PATH se lee al abrirla.</p></div>
+    </section>
+
+    <!-- 8 -->
+    <section id="s8">
+      <div class="sec-head"><span class="n">08</span><h2>Cómo probar un cambio</h2></div>
+      <pre class="block"><span class="c1"># ¿arranca y qué motor tiene?</span>
+curl http://127.0.0.1:8000/health
+
+<span class="c1"># geometría, sin levantar el servidor</span>
+python -c <span class="str">"from overlay import Config, layout; print(layout(Config('Loon_VT','LoonVT').clean()))"</span>
+
+<span class="c1"># un fotograma suelto a PNG, para mirarlo</span>
+python -c <span class="str">"
+from overlay import Config, frame_svg, rasterize
+rasterize(frame_svg(0.4, Config('Loon_VT','LoonVT').clean()), 'prueba.png')"</span>
+
+<span class="c1"># el video, por CLI</span>
+python overlay.py --twitch Loon_VT --kick LoonVT --animation rebote --duration 4
+
+<span class="c1"># ¿sobrevivió el alfa?</span>
+ffprobe -v error -show_streams overlay-loon_vt.webm | grep alpha_mode</pre>
+
+      <p class="prose" style="margin:18px 0 10px;">Casos a revisar cuando se toca <code class="inline">layout()</code> o <code class="inline">frame_svg()</code> — cada uno recorre una rama distinta:</p>
+      <div class="checks">
+        <div class="check"><span class="num">1</span><span>Las dos plataformas con nombres cortos (<code class="inline">Loon_VT</code> / <code class="inline">LoonVT</code>).</span></div>
+        <div class="check"><span class="num">2</span><span>Las dos con un nombre largo (<code class="inline">cristian_shippo</code>), que dispara la reducción de letra.</span></div>
+        <div class="check"><span class="num">3</span><span>Solo Twitch, y solo Kick: sin costura, barra encogida, cuerpo de letra mayor.</span></div>
+        <div class="check"><span class="num">4</span><span>Las tres alineaciones, sobre todo con una sola plataforma.</span></div>
+        <div class="check"><span class="num">5</span><span>Las seis animaciones, en <code class="inline">t = 0.15</code>, <code class="inline">0.4</code> y <code class="inline">1.2</code>.</span></div>
+        <div class="check"><span class="num">6</span><span>La vista previa con <code class="inline">animate=1</code>, comprobando que el SVG sale bien formado.</span></div>
+      </div>
+      <p class="prose" style="margin-top:14px;">No hay suite de pruebas. <code class="inline">layout()</code> y <code class="inline">anim_state()</code> son funciones puras — el sitio obvio por donde empezar si se agrega una.</p>
+    </section>
+
+    <!-- 9 -->
+    <section id="s9">
+      <div class="sec-head"><span class="n">09</span><h2>Convenios</h2></div>
+      <div class="checks">
+        <div class="check"><span class="num">→</span><span>Comentarios y mensajes al usuario en español. En comentarios de código, sin tildes (codificación del terminal); en textos de usuario, con tildes.</span></div>
+        <div class="check"><span class="num">→</span><span><code class="inline">overlay.py</code> no importa nada de FastAPI. Tiene que seguir funcionando como CLI suelto.</span></div>
+        <div class="check"><span class="num">→</span><span>Los números mágicos viven como constantes arriba de <code class="inline">overlay.py</code>, no dispersos en las funciones de dibujo.</span></div>
+        <div class="check"><span class="num">→</span><span>Los archivos generados (<code class="inline">.webm</code>, <code class="inline">.mov</code>, <code class="inline">frames/</code>) están en el <code class="inline">.gitignore</code>.</span></div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10">
+      <div class="sec-head"><span class="n">10</span><h2>Ideas pendientes</h2></div>
+      <ul class="pending">
+        <li>Empaquetarlo en Docker.</li>
+        <li>Selector de colores, para reusar el generador con otra paleta.</li>
+        <li>Variante para nombre idéntico en las dos plataformas: mostrarlo una sola vez, grande, cortado por la diagonal, con los dos iconos juntos — hoy se repite el texto y obliga a encoger la letra.</li>
+        <li>Integrar la variante apaisada de 1600×900 para pantalla de "ya vuelvo", que existe como SVG suelto y nunca entró a la app.</li>
+        <li>Animación de salida, además de la de entrada.</li>
+      </ul>
+    </section>
+
+    <footer>Reordenado a partir de <code class="inline">CLAUDE.md</code> — el archivo del repo sigue siendo la fuente que manda ante cualquier duda o cambio futuro.</footer>
+  </main>
+</div>
