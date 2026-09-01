@@ -1,33 +1,48 @@
 const $ = id => document.getElementById(id);
-const onTw = $('onTw'), onKk = $('onKk'), nameTw = $('nameTw'), nameKk = $('nameKk');
-let kickTocado = false; // mientras no lo edites a mano, copia el nombre de Twitch
+
+const PLATFORMS = [
+  { id: 'twitch', on: 'onTw', name: 'nameTw', panel: 'pTw', label: 'Twitch' },
+  { id: 'kick', on: 'onKk', name: 'nameKk', panel: 'pKk', label: 'Kick' },
+  { id: 'tiktok', on: 'onTt', name: 'nameTt', panel: 'pTt', label: 'TikTok' },
+  { id: 'youtube', on: 'onYt', name: 'nameYt', panel: 'pYt', label: 'YouTube' },
+].map(p => ({ ...p, onEl: $(p.on), nameEl: $(p.name), panelEl: $(p.panel) }));
 
 function estado() {
-  return {
-    twitch: onTw.checked ? nameTw.value.trim() : null,
-    kick:   onKk.checked ? nameKk.value.trim() : null,
-    label:  $('label').value,
+  const s = {
+    label: $('label').value,
     position: $('position').value,
     align: $('align').value,
     animation: $('animation').value,
     duration: parseFloat($('duration').value) || 6,
     fps: 30
   };
+  for (const p of PLATFORMS) s[p.id] = p.onEl.checked ? p.nameEl.value.trim() : null;
+  return s;
+}
+
+function activas() {
+  return PLATFORMS.filter(p => p.onEl.checked);
 }
 
 function validar(s) {
-  if (!onTw.checked && !onKk.checked) return 'Activa al menos una plataforma.';
-  if (onTw.checked && !s.twitch) return 'Falta el nombre de Twitch.';
-  if (onKk.checked && !s.kick) return 'Falta el nombre de Kick.';
+  const on = activas();
+  if (on.length === 0) return 'Activa al menos una plataforma.';
+  if (on.length > 2) return 'Como máximo dos plataformas.';
+  for (const p of on) {
+    if (!s[p.id]) return `Falta el nombre de ${p.label}.`;
+  }
   return '';
 }
 
 let tPrev;
 function refrescar() {
-  $('pTw').dataset.on = onTw.checked ? '1' : '0';
-  $('pKk').dataset.on = onKk.checked ? '1' : '0';
-  nameTw.disabled = !onTw.checked;
-  nameKk.disabled = !onKk.checked;
+  const on = activas();
+  const atLimite = on.length >= 2;
+  for (const p of PLATFORMS) {
+    p.panelEl.dataset.on = p.onEl.checked ? '1' : '0';
+    p.nameEl.disabled = !p.onEl.checked;
+    p.onEl.disabled = atLimite && !p.onEl.checked;
+  }
 
   const s = estado();
   const err = validar(s);
@@ -42,8 +57,7 @@ function refrescar() {
   clearTimeout(tPrev);
   tPrev = setTimeout(() => {
     const q = new URLSearchParams();
-    if (s.twitch) q.set('twitch', s.twitch);
-    if (s.kick) q.set('kick', s.kick);
+    for (const p of PLATFORMS) if (s[p.id]) q.set(p.id, s[p.id]);
     q.set('label', s.label);
     q.set('position', s.position);
     q.set('align', s.align);
@@ -55,13 +69,11 @@ function refrescar() {
   }, 220);
 }
 
-// si Kick no se ha tocado a mano, copia el nombre de Twitch
-nameTw.addEventListener('input', () => {
-  if (!kickTocado) nameKk.value = nameTw.value;
-  refrescar();
-});
-nameKk.addEventListener('input', () => { kickTocado = nameKk.value.trim() !== ''; refrescar(); });
-['onTw','onKk','label','position','align','animation','duration'].forEach(id => {
+for (const p of PLATFORMS) {
+  p.onEl.addEventListener('change', refrescar);
+  p.nameEl.addEventListener('input', refrescar);
+}
+['label', 'position', 'align', 'animation', 'duration'].forEach(id => {
   $(id).addEventListener('input', refrescar);
   $(id).addEventListener('change', refrescar);
 });
@@ -101,9 +113,10 @@ $('go').addEventListener('click', async () => {
     const url = URL.createObjectURL(blob);
     const v = $('vid');
     v.src = url; v.style.display = ''; $('prev').style.display = 'none';
+    const primerNombre = activas().map(p => s[p.id]).find(Boolean);
     const dl = $('dl');
     dl.href = url;
-    dl.download = 'overlay-' + ((s.twitch || s.kick).toLowerCase().replace(/[^a-z0-9._-]+/g, '-')) + '.webm';
+    dl.download = 'overlay-' + primerNombre.toLowerCase().replace(/[^a-z0-9._-]+/g, '-') + '.webm';
     dl.style.display = 'inline-block';
     $('status').textContent = 'Listo · ' + (blob.size / 1024).toFixed(0) + ' KB · ' +
                               ((Date.now() - t0) / 1000).toFixed(1) + ' s';

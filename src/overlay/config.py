@@ -5,13 +5,15 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from .constants import POSITIONS, ALIGNMENTS, ANIMATIONS
+from .constants import POSITIONS, ALIGNMENTS, ANIMATIONS, PLATFORM_ORDER
 
 
 @dataclass
 class Config:
     twitch: str | None = None
     kick: str | None = None
+    tiktok: str | None = None
+    youtube: str | None = None
     label: str = "sígueme en vivo"
     position: str = "media"
     align: str = "centro"
@@ -20,12 +22,15 @@ class Config:
     fps: int = 30
 
     def clean(self) -> "Config":
-        tw = (self.twitch or "").strip() or None
-        kk = (self.kick or "").strip() or None
-        if not tw and not kk:
-            raise ValueError("Hace falta al menos un nombre: Twitch, Kick o los dos.")
+        names = {p: (getattr(self, p) or "").strip() or None for p in PLATFORM_ORDER}
+        active = [p for p in PLATFORM_ORDER if names[p]]
+        if not active:
+            raise ValueError("Hace falta al menos una plataforma: Twitch, Kick, TikTok o YouTube.")
+        if len(active) > 2:
+            raise ValueError("Como maximo dos plataformas a la vez.")
         return Config(
-            tw, kk, (self.label or "").strip(),
+            names["twitch"], names["kick"], names["tiktok"], names["youtube"],
+            (self.label or "").strip(),
             self.position if self.position in POSITIONS else "media",
             self.align if self.align in ALIGNMENTS else "centro",
             self.animation if self.animation in ANIMATIONS else "barrido",
@@ -33,6 +38,11 @@ class Config:
             60 if int(self.fps) >= 60 else 30,
         )
 
+    def active(self) -> list[tuple[str, str]]:
+        """[(id_plataforma, nombre), ...] en el orden de PLATFORM_ORDER. 1 o 2 items."""
+        return [(p, getattr(self, p)) for p in PLATFORM_ORDER if getattr(self, p)]
+
     def slug(self) -> str:
-        base = self.twitch or self.kick or "overlay"
+        active = self.active()
+        base = active[0][1] if active else "overlay"
         return re.sub(r"[^a-zA-Z0-9._-]+", "-", base).strip("-.").lower() or "overlay"

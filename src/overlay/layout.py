@@ -9,23 +9,24 @@ from __future__ import annotations
 
 from .config import Config
 from .constants import W, MARGIN, BH, MAXW, PAD, ICON, GAPIT, CGAP, NAME_MAX_2, NAME_MAX_1, NAME_MIN, POSITIONS
+from .platforms import PLATFORMS
 from .typography import measure
 
 
 def layout(cfg: Config) -> dict:
     by = POSITIONS[cfg.position]
-    both = bool(cfg.twitch and cfg.kick)
+    active = cfg.active()
+    both = len(active) == 2
 
     if both:
         bw = MAXW
         avail = (bw - 2 * PAD - CGAP - 2 * (ICON + GAPIT)) / 2
-        widest = max(measure(cfg.twitch, "bold", NAME_MAX_2, 0.5),
-                     measure(cfg.kick, "bold", NAME_MAX_2, 0.5))
+        widest = max(measure(name, "bold", NAME_MAX_2, 0.5) for _, name in active)
         size = NAME_MAX_2 if widest <= avail else max(NAME_MIN, NAME_MAX_2 * avail / widest)
     else:
-        name = cfg.twitch or cfg.kick
+        pid, name = active[0]
         size = NAME_MAX_1
-        tw = max(measure(name, "bold", size, 0.5), measure("twitch.tv", "medium", 22, 2))
+        tw = max(measure(name, "bold", size, 0.5), measure(PLATFORMS[pid].url, "medium", 22, 2))
         bw = 2 * PAD + ICON + GAPIT + tw
         if bw > MAXW:
             size = max(NAME_MIN, size * (MAXW - 2 * PAD - ICON - GAPIT) / tw)

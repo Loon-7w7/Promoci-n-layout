@@ -15,10 +15,14 @@ from __future__ import annotations
 
 from .animation import anim_state
 from .config import Config
-from .constants import W, H, BH, BR, ICON, GAPIT, VIOLET, GREEN, INTRO
-from .icons import twitch_icon, kick_icon
+from .constants import W, H, BH, BR, ICON, GAPIT, INTRO
 from .layout import layout
+from .platforms import PLATFORMS
 from .typography import text_path
+
+# claves de anim_state para el primer y segundo bloque (izquierda/derecha),
+# en ese orden. No dependen de que plataforma ocupe cada lado.
+_SLOTS = (("tw_op", "tw_dy"), ("kk_op", "kk_dy"))
 
 
 def _smil(attr: str, values: list[str], cycle: float, kind: str | None = None) -> str:
@@ -40,6 +44,7 @@ def frame_svg(t: float, cfg: Config, cycle: float | None = None) -> str:
     L = layout(cfg)
     bx, by, bw, size = L["bx"], L["by"], L["bw"], L["size"]
     seam = L["seam"]
+    active = cfg.active()  # [(id, nombre)], 1 o 2 items, izquierda primero
     st = anim_state(t if cycle is None else 99.0, cfg, L)
 
     samples = []
@@ -72,12 +77,12 @@ def frame_svg(t: float, cfg: Config, cycle: float | None = None) -> str:
         left = right = band
 
     if L["both"]:
-        edge = (f'<stop offset="0%" stop-color="#A78BFA"/><stop offset="48%" stop-color="{VIOLET}"/>'
-                f'<stop offset="52%" stop-color="{GREEN}"/><stop offset="100%" stop-color="#2FA80A"/>')
-    elif cfg.twitch:
-        edge = f'<stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="{VIOLET}"/>'
+        left_p, right_p = PLATFORMS[active[0][0]], PLATFORMS[active[1][0]]
+        edge = (f'<stop offset="0%" stop-color="{left_p.edge_light}"/><stop offset="48%" stop-color="{left_p.color}"/>'
+                f'<stop offset="52%" stop-color="{right_p.color}"/><stop offset="100%" stop-color="{right_p.edge_dark}"/>')
     else:
-        edge = f'<stop offset="0%" stop-color="{GREEN}"/><stop offset="100%" stop-color="#2FA80A"/>'
+        p = PLATFORMS[active[0][0]]
+        edge = f'<stop offset="0%" stop-color="{p.edge_light}"/><stop offset="100%" stop-color="{p.color}"/>'
 
     s = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
          f'''<defs>
@@ -99,7 +104,8 @@ def frame_svg(t: float, cfg: Config, cycle: float | None = None) -> str:
         s.append(f'<g opacity="{st["lb_op"]:.3f}">{anim("opacity", "lb_op")}')
         s.append(f'<g transform="translate({st["lb_dx"]:.2f},{st["lb_dy"]:.2f})">{anim_xy("lb_dx", "lb_dy")}')
         s.append('<g filter="url(#liftText)">')
-        s.append(f'<circle cx="{L["lab_x"]+9:.1f}" cy="{by-52}" r="9" fill="{GREEN if cfg.kick else "#A78BFA"}"/>')
+        dot_color = PLATFORMS[active[-1][0]].color
+        s.append(f'<circle cx="{L["lab_x"]+9:.1f}" cy="{by-52}" r="9" fill="{dot_color}"/>')
         s.append('<g fill="#FFFFFF" opacity="0.95">'
                  + text_path(cfg.label, "light", 36, L["lab_x"] + 44, by - 40, 2) + '</g>')
         s.append('</g></g></g>')
@@ -113,41 +119,35 @@ def frame_svg(t: float, cfg: Config, cycle: float | None = None) -> str:
     s.append('<g clip-path="url(#wipe)">')
 
     s.append(f'<g filter="url(#lift)"><g opacity="0.62" fill="#000000">{band}</g></g>')
-    if cfg.twitch:
-        s.append(f'<g clip-path="url(#band)"><g clip-path="url(#bandL)">'
-                 f'<rect x="{bx:.1f}" y="{by}" width="{bw:.1f}" height="{BH}" fill="{VIOLET}" opacity="0.40"/></g></g>')
-    if cfg.kick:
-        s.append(f'<g clip-path="url(#band)"><g clip-path="url(#bandR)">'
-                 f'<rect x="{bx:.1f}" y="{by}" width="{bw:.1f}" height="{BH}" fill="{GREEN}" opacity="0.10"/></g></g>')
+    for i, (pid, _name) in enumerate(active):
+        p = PLATFORMS[pid]
+        clip_id = "bandL" if i == 0 else "bandR"
+        s.append(f'<g clip-path="url(#band)"><g clip-path="url(#{clip_id})">'
+                 f'<rect x="{bx:.1f}" y="{by}" width="{bw:.1f}" height="{BH}" fill="{p.color}" '
+                 f'opacity="{p.tint_opacity}"/></g></g>')
     if seam:
         s_t, s_b = seam
+        seam_color = PLATFORMS[active[1][0]].color
         s.append(f'<g clip-path="url(#band)"><line x1="{s_t:.1f}" y1="{by}" x2="{s_b:.1f}" y2="{by+BH}" '
-                 f'stroke="{GREEN}" stroke-width="3" opacity="0.9"/></g>')
+                 f'stroke="{seam_color}" stroke-width="3" opacity="0.9"/></g>')
     s.append(f'<rect x="{bx:.1f}" y="{by}" width="{bw:.1f}" height="{BH}" rx="{BR}" fill="none" '
              f'stroke="url(#edge)" stroke-width="3" opacity="0.9"/>')
 
-    if cfg.twitch:
-        s.append(f'<g opacity="{st["tw_op"]:.3f}">{anim("opacity", "tw_op")}')
-        s.append(f'<g transform="translate(0,{st["tw_dy"]:.2f})">'
-                 + (_smil("transform", [f'0 {x["tw_dy"]:.2f}' for x in samples], cycle, "translate") if cycle else ""))
-        s.append(twitch_icon(L["x1"], L["icon_y"]))
-        tx = L["x1"] + ICON + GAPIT
-        s.append('<g fill="#FFFFFF" opacity="0.62">'
-                 + text_path("twitch.tv", "medium", 22, tx, L["url_y"], 2) + '</g>')
-        s.append('<g fill="#FFFFFF">'
-                 + text_path(cfg.twitch, "bold", size, tx, L["name_y"], 0.5) + '</g>')
-        s.append('</g></g>')
-
-    if cfg.kick:
-        s.append(f'<g opacity="{st["kk_op"]:.3f}">{anim("opacity", "kk_op")}')
-        s.append(f'<g transform="translate(0,{st["kk_dy"]:.2f})">'
-                 + (_smil("transform", [f'0 {x["kk_dy"]:.2f}' for x in samples], cycle, "translate") if cycle else ""))
-        s.append(kick_icon(L["x2"], L["icon_y"]))
-        tx = L["x2"] + ICON + GAPIT
-        s.append(f'<g fill="{GREEN}" opacity="0.7">'
-                 + text_path("kick.com", "medium", 22, tx, L["url_y"], 2) + '</g>')
-        s.append(f'<g fill="{GREEN}">'
-                 + text_path(cfg.kick, "bold", size, tx, L["name_y"], 0.5) + '</g>')
+    for i, (pid, name) in enumerate(active):
+        p = PLATFORMS[pid]
+        op_key, dy_key = _SLOTS[i]
+        x = L["x1"] if i == 0 else L["x2"]
+        color = "#FFFFFF" if p.text_white else p.color
+        url_opacity = 0.62 if p.text_white else 0.7
+        s.append(f'<g opacity="{st[op_key]:.3f}">{anim("opacity", op_key)}')
+        s.append(f'<g transform="translate(0,{st[dy_key]:.2f})">'
+                 + (_smil("transform", [f'0 {smp[dy_key]:.2f}' for smp in samples], cycle, "translate") if cycle else ""))
+        s.append(p.icon(x, L["icon_y"]))
+        tx = x + ICON + GAPIT
+        s.append(f'<g fill="{color}" opacity="{url_opacity}">'
+                 + text_path(p.url, "medium", 22, tx, L["url_y"], 2) + '</g>')
+        s.append(f'<g fill="{color}">'
+                 + text_path(name, "bold", size, tx, L["name_y"], 0.5) + '</g>')
         s.append('</g></g>')
 
     s.append('</g></g></g></g></g></g></svg>')

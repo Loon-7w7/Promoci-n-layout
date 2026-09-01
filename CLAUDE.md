@@ -8,7 +8,8 @@ un motivo, y varios de esos motivos costaron trabajo descubrirlos.
 
 ## 1. Qué hace esto
 
-Genera un overlay de "sígueme en Twitch y Kick" para video vertical.
+Genera un overlay de "sígueme en [plataforma]" para video vertical, eligiendo hasta
+**dos** de cuatro redes soportadas: Twitch, Kick, TikTok y YouTube.
 
 La salida es un **WebM de 1080×1920 con canal alfa** y una animación de entrada.
 Se arrastra a una pista superior en Filmora, sin chroma ni recortes: el fondo es
@@ -32,7 +33,8 @@ src/overlay/             Paquete del motor. Sin dependencias de FastAPI. Ejecuta
   typography.py            measure(), text_path(): la fuente convertida a trazos.
   config.py                Config y su unico validador, clean().
   layout.py                layout(cfg): toda la geometria resuelta en un solo lugar.
-  icons.py                 twitch_icon(), kick_icon(): formas propias, no los logos oficiales.
+  icons.py                 icono de cada red: formas propias, no los logos oficiales.
+  platforms.py             registro de las 4 redes: icono, color y textos de cada una.
   animation.py             anim_state(t, cfg, L): unica fuente de verdad de la animacion.
   svg.py                   frame_svg(): arma el SVG completo a partir de las piezas anteriores.
   raster.py                raster_engine(), rasterize(): SVG -> PNG con alfa.
@@ -125,19 +127,30 @@ depende del nombre del archivo.
 
 ### 4.2 `Config` y `clean()` (`config.py`)
 
-Un dataclass plano con todo lo que el usuario puede elegir. `clean()` es el único
-lugar donde se validan y normalizan los valores: recorta espacios, convierte cadenas
-vacías en `None`, cae a los valores por defecto si llega una opción desconocida y
-limita duración y fps.
+Un dataclass plano con todo lo que el usuario puede elegir: un campo `str | None` por
+cada una de las 4 plataformas (`twitch`, `kick`, `tiktok`, `youtube`), más texto,
+posición, alineación, animación, duración y fps. `clean()` es el único lugar donde se
+validan y normalizan los valores: recorta espacios, convierte cadenas vacías en
+`None`, cae a los valores por defecto si llega una opción desconocida y limita
+duración y fps.
 
-**Regla que sostiene todo:** si `twitch` y `kick` quedan ambos en `None`, `clean()`
-lanza `ValueError`. Ese es el "al menos una plataforma" del requisito. La interfaz
-también lo valida para desactivar el botón, pero la validación real vive aquí, así
-que llamar a la API directamente tampoco puede saltárselo. Devuelve un 400 con el
-motivo.
+**Regla que sostiene todo:** `clean()` cuenta cuántas de las 4 plataformas quedaron
+con nombre. Cero, lanza `ValueError` ("al menos una"). Más de dos, también
+("como máximo dos a la vez"). La interfaz también lo valida (deshabilita los
+interruptores apagados en cuanto hay 2 activos, ver §5), pero la validación real
+vive aquí, así que llamar a la API directamente tampoco puede saltársela. Devuelve
+un 400 con el motivo.
 
 `clean()` devuelve una **Config nueva**, no muta. Las funciones de dibujo asumen que
 reciben una config ya limpia.
+
+`Config.active()` devuelve `[(id_plataforma, nombre), ...]`, con 1 o 2 elementos, en
+el orden de `PLATFORM_ORDER` (`constants.py`: twitch, kick, tiktok, youtube). Es el
+único lugar del código que decide "cuál va a la izquierda y cuál a la derecha": todo
+lo demás (`layout.py`, `svg.py`) itera sobre esa lista en vez de preguntar por una
+plataforma en particular. Si agregas una quinta plataforma, el registro nuevo va en
+`platforms.py` y el id nuevo en `PLATFORM_ORDER`; el resto del motor no necesita
+saber que existe.
 
 ### 4.3 `layout(cfg)` — toda la geometría en un solo lugar (`layout.py`)
 
@@ -155,7 +168,8 @@ Orden en que decide las cosas, que importa:
 3. **Posición horizontal (`bx`).** Se resuelve *después* del ancho, por eso centrar
    funciona igual cuando la barra se encogió.
 4. **Costura diagonal (`seam`).** Solo existe con dos plataformas: es el par de
-   coordenadas X arriba y abajo de la línea que separa el lado morado del oscuro.
+   coordenadas X arriba y abajo de la línea que separa el color de la izquierda del
+   de la derecha (cada una tiñe la barra con su propio `Platform.color`, ver 4.2).
    Con una sola plataforma es `None` y el código de dibujo se salta la línea y usa
    la barra completa como región de tinte.
 5. **Etiqueta de arriba (`lab_x`).** Sigue la alineación de la barra.
@@ -171,7 +185,8 @@ Constantes que puedes tocar sin romper nada, todas en `constants.py`:
 | `PAD`, `ICON`, `GAPIT`, `CGAP` | Espaciado interno | Alimentan el cálculo de `avail` |
 | `POSITIONS` | Las tres alturas en píxeles | |
 | `NAME_MAX_2`, `NAME_MAX_1`, `NAME_MIN` | Rango del cuerpo de letra | |
-| `VIOLET`, `GREEN`, `INK` | Paleta | |
+| `VIOLET`, `GREEN`, `TIKTOK`, `YOUTUBE`... | Colores base | El color/icono/texto de cada red vive en `platforms.py`, no aquí |
+| `PLATFORM_ORDER` | Las 4 plataformas, en el orden izquierda→derecha | Config.active() lo respeta |
 | `INTRO` | Duración de la entrada, en segundos | Compartida por video y vista previa |
 
 ### 4.4 `anim_state(t, cfg, L)` — la única fuente de verdad de la animación (`animation.py`)
@@ -185,15 +200,19 @@ ese instante.
   "tx", "ty": float,      # desplazamiento de la barra completa
   "sx", "sy": float,      # escala de la barra, siempre desde su centro
   "op": float,            # opacidad de la barra completa
-  "tw_dy", "tw_op": float,  # bloque de Twitch
-  "kk_dy", "kk_op": float,  # bloque de Kick
+  "tw_dy", "tw_op": float,  # bloque de la izquierda (la primera de Config.active())
+  "kk_dy", "kk_op": float,  # bloque de la derecha (la segunda, si hay dos)
   "lb_dx", "lb_dy", "lb_op": float,  # etiqueta de arriba
 }
 ```
 
-Arriba se calcula el escalonado que comparten todas las animaciones (Twitch entra
-primero, Kick después, la etiqueta al final) y luego cada `elif` sobrescribe lo suyo.
-Con una sola plataforma el escalonado se colapsa para que no haya una espera rara.
+Las claves se llaman `tw_*`/`kk_*` por como empezó el proyecto (solo Twitch y Kick),
+pero hoy son genéricas: identifican el primer y segundo bloque de la barra, sea cual
+sea la plataforma que ocupe ese lado (`svg.py` los asigna por posición, no por
+nombre). Arriba se calcula el escalonado que comparten todas las animaciones (la
+izquierda entra primero, la derecha después, la etiqueta al final) y luego cada
+`elif` sobrescribe lo suyo. Con una sola plataforma el escalonado se colapsa para
+que no haya una espera rara.
 
 Auxiliares: `_ease_out` es un cúbico de salida normal; `_ease_back` se pasa del
 destino y regresa, es lo que hace el rebote; `_seg(t, a, b, ease)` normaliza un tramo
@@ -266,20 +285,25 @@ Los parámetros de ffmpeg no son negociables si quieres conservar el alfa:
 Sin framework ni paso de build, pero dividida en tres archivos por tipo, todos dentro
 de `src/static/`:
 
-- `index.html` — el esqueleto: los dos bloques de plataforma con interruptor y campo
-  de nombre, los controles (texto, animación, altura, alineación, duración), el botón,
-  y a la derecha un escenario 9:16 con la vista previa sobre un fondo intercambiable
-  entre cuadros, oscuro y claro, para revisar contraste. Enlaza a los otros dos con
-  `<link rel="stylesheet" href="/static/style.css">` y `<script src="/static/app.js">`.
-- `style.css` — todo el CSS, sin cambios de comportamiento.
-- `app.js` — toda la lógica:
+- `index.html` — el esqueleto: los cuatro bloques de plataforma (Twitch, Kick, TikTok,
+  YouTube) con interruptor y campo de nombre, los controles (texto, animación, altura,
+  alineación, duración), el botón, y a la derecha un escenario 9:16 con la vista previa
+  sobre un fondo intercambiable entre cuadros, oscuro y claro, para revisar contraste.
+  Enlaza a los otros dos con `<link rel="stylesheet" href="/static/style.css">` y
+  `<script src="/static/app.js">`.
+- `style.css` — todo el CSS, incluida una regla `:has()` que atenúa los interruptores
+  deshabilitados.
+- `app.js` — toda la lógica, alrededor de un arreglo `PLATFORMS` (id, checkbox, campo
+  de nombre, panel) para no repetir cuatro veces la misma lógica:
   - `estado()` junta el formulario en el mismo objeto que espera la API.
-  - `validar()` decide el mensaje de error y si el botón va deshabilitado.
+  - `activas()` devuelve las plataformas con el interruptor encendido.
+  - `validar()` decide el mensaje de error y si el botón va deshabilitado. Falla si hay
+    cero activas, si hay más de dos, o si a alguna activa le falta el nombre.
   - `refrescar()` sincroniza el aspecto de los bloques, valida, y con 220 ms de retraso
     actualiza el `src` de la vista previa. Si la validación falla, quita el `src` para
-    no dejar una imagen rota.
-  - Mientras no edites el campo de Kick a mano, se copia lo que escribes en Twitch. Si
-    lo vacías, vuelve a copiarse. La bandera es `kickTocado`.
+    no dejar una imagen rota. También es quien **deshabilita los interruptores apagados**
+    en cuanto hay 2 plataformas activas, para que nunca se pueda llegar a un estado
+    inválido desde la interfaz (el límite real de todos modos vive en `clean()`, ver 4.2).
 
 `app.py` sirve `index.html` con una ruta propia (`GET /`, lee el archivo y lo devuelve
 como `HTMLResponse`) y monta `/static` con `StaticFiles` para que el navegador pueda
@@ -297,6 +321,21 @@ pedir `style.css` y `app.js` por su cuenta. Si agregas un archivo nuevo dentro d
 
 Olvidar el paso 2 es el error silencioso más probable: la interfaz manda el valor, el
 servidor lo ignora y no falla nada.
+
+**Agregar una quinta plataforma** toca cinco lugares:
+
+1. `overlay/constants.py`: el id nuevo al final de `PLATFORM_ORDER`, y sus colores.
+2. `overlay/icons.py`: la función `xxx_icon(x, y)` — forma geométrica propia, no el
+   logo oficial (ver §6).
+3. `overlay/platforms.py`: la entrada en `PLATFORMS` (label, url, icono, color,
+   `edge_light`/`edge_dark`, `tint_opacity`, `text_white`).
+4. `overlay/config.py`: el campo `str | None` en `Config`. `clean()`, `active()` y
+   `slug()` no necesitan cambios: ya iteran sobre `PLATFORM_ORDER`.
+5. `app.py` (`RenderIn` y `preview()`), `static/index.html` (el bloque), y
+   `overlay/__main__.py` (el argumento), igual que con cualquier control nuevo.
+
+`layout.py` y `svg.py` no necesitan tocarse: ya trabajan sobre `Config.active()` en
+vez de preguntar por una plataforma en particular.
 
 ---
 
@@ -317,9 +356,15 @@ el estándar al pie de la letra— aplica las sombras en espacio lineal y el tex
 apagado. cairosvg lo ignoraba, así que el problema solo aparece al cambiar de motor.
 Cualquier filtro nuevo necesita el mismo atributo.
 
-**Los iconos son formas geométricas propias**, no los logos oficiales de Twitch ni de
-Kick. Si vas a usar los oficiales, bájalos de las guías de marca de cada plataforma y
-respeta sus reglas de uso.
+**Los iconos son formas geométricas propias**, no los logos oficiales de ninguna de
+las 4 plataformas (el de TikTok es una nota musical genérica; el de YouTube, un
+triángulo de play). Si vas a usar los oficiales, bájalos de las guías de marca de
+cada plataforma y respeta sus reglas de uso.
+
+**Como máximo dos plataformas a la vez.** No es una limitación técnica cualquiera:
+`MAXW` y el ancho del icono/nombre están calibrados para dos bloques como mucho. Si
+alguna vez hace falta mostrar tres o más, hay que rehacer la geometría de `layout.py`
+desde cero, no solo subir el límite de `Config.clean()`.
 
 ---
 
@@ -376,12 +421,15 @@ ffprobe -v error -show_streams overlay-loon_vt.webm | grep alpha_mode
 Casos que conviene revisar cuando toques `layout()` o `frame_svg()`, porque cada uno
 recorre una rama distinta:
 
-1. Las dos plataformas con nombres cortos (`Loon_VT` / `LoonVT`).
-2. Las dos con un nombre largo (`cristian_shippo`), que dispara la reducción de letra.
-3. Solo Twitch, y solo Kick: sin costura, barra encogida, cuerpo de letra mayor.
+1. Dos plataformas con nombres cortos (`Loon_VT` / `LoonVT`).
+2. Dos con un nombre largo (`cristian_shippo`), que dispara la reducción de letra.
+3. Cada plataforma sola (Twitch, Kick, TikTok, YouTube): sin costura, barra encogida,
+   cuerpo de letra mayor. TikTok y YouTube valen la pena en particular porque
+   `text_white=False` en TikTok cambia el color del texto (ver `platforms.py`).
 4. Las tres alineaciones, sobre todo con una sola plataforma.
 5. Las seis animaciones, en `t = 0.15`, `0.4` y `1.2`.
 6. La vista previa con `animate=1`, comprobando que el SVG sale bien formado.
+7. Tres plataformas activas (por API o CLI): `clean()` debe rechazarlas con 400.
 
 No hay suite de pruebas. Si vas a agregar una, `layout()` y `anim_state()` son
 funciones puras y el sitio obvio por donde empezar.

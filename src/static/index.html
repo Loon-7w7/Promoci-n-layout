@@ -3,32 +3,52 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Generador de overlay · Twitch / Kick</title>
+<title>Generador de overlay · Twitch / Kick / TikTok / YouTube</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div class="wrap">
   <div>
     <h1>Generador de overlay</h1>
-    <p class="lead">Vertical 1080×1920, WebM con canal alfa, listo para Filmora.</p>
+    <p class="lead">Vertical 1080×1920, WebM con canal alfa, listo para Filmora. Elige hasta dos plataformas.</p>
 
     <div class="panel">
-      <div class="platform tw" id="pTw" data-on="1">
-        <div class="prow">
-          <span class="chip tw">T</span>
-          <span class="pname">Twitch</span>
-          <span class="sw"><input type="checkbox" id="onTw" checked><span class="track"></span><span class="knob"></span></span>
+      <div class="plat-grid">
+        <div class="platform tw" id="pTw" data-on="1">
+          <div class="prow">
+            <span class="chip tw">T</span>
+            <span class="pname">Twitch</span>
+            <span class="sw"><input type="checkbox" id="onTw" checked><span class="track"></span><span class="knob"></span></span>
+          </div>
+          <div class="field"><span class="pre">twitch.tv/</span><input type="text" id="nameTw" placeholder="tu_usuario" spellcheck="false"></div>
         </div>
-        <div class="field"><span class="pre">twitch.tv/</span><input type="text" id="nameTw" placeholder="tu_usuario" spellcheck="false"></div>
-      </div>
 
-      <div class="platform kk" id="pKk" data-on="1">
-        <div class="prow">
-          <span class="chip kk">K</span>
-          <span class="pname">Kick</span>
-          <span class="sw"><input type="checkbox" id="onKk" checked><span class="track"></span><span class="knob"></span></span>
+        <div class="platform kk" id="pKk" data-on="1">
+          <div class="prow">
+            <span class="chip kk">K</span>
+            <span class="pname">Kick</span>
+            <span class="sw"><input type="checkbox" id="onKk" checked><span class="track"></span><span class="knob"></span></span>
+          </div>
+          <div class="field"><span class="pre">kick.com/</span><input type="text" id="nameKk" placeholder="tu_usuario" spellcheck="false"></div>
         </div>
-        <div class="field"><span class="pre">kick.com/</span><input type="text" id="nameKk" placeholder="se copia del de Twitch" spellcheck="false"></div>
+
+        <div class="platform tt" id="pTt" data-on="0">
+          <div class="prow">
+            <span class="chip tt">♪</span>
+            <span class="pname">TikTok</span>
+            <span class="sw"><input type="checkbox" id="onTt"><span class="track"></span><span class="knob"></span></span>
+          </div>
+          <div class="field"><span class="pre">tiktok.com/</span><input type="text" id="nameTt" placeholder="tu_usuario" spellcheck="false"></div>
+        </div>
+
+        <div class="platform yt" id="pYt" data-on="0">
+          <div class="prow">
+            <span class="chip yt">▶</span>
+            <span class="pname">YouTube</span>
+            <span class="sw"><input type="checkbox" id="onYt"><span class="track"></span><span class="knob"></span></span>
+          </div>
+          <div class="field"><span class="pre">youtube.com/</span><input type="text" id="nameYt" placeholder="tu_usuario" spellcheck="false"></div>
+        </div>
       </div>
 
       <label class="small" for="label">Texto de arriba</label>

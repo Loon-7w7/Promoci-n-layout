@@ -22,6 +22,11 @@ NAME_MIN = 26
 POSITIONS = {"alta": 620, "media": 1230, "baja": 1500}
 ALIGNMENTS = ("izquierda", "centro", "derecha")
 
+# orden fijo de las plataformas soportadas. Decide cual va a la izquierda y
+# cual a la derecha cuando hay dos activas (Config.active() lo respeta).
+# Como maximo dos a la vez: lo valida Config.clean().
+PLATFORM_ORDER = ("twitch", "kick", "tiktok", "youtube")
+
 # nombre interno -> etiqueta para la interfaz
 ANIMATIONS = {
     "barrido": "Barrido lateral",
@@ -35,5 +40,16 @@ INTRO = 1.15            # cuanto dura la entrada, en segundos
 
 VIOLET = "#7C3AED"
 VIOLET_DEEP = "#5B21B6"
+VIOLET_SOFT = "#A78BFA"
 GREEN = "#53FC18"
+GREEN_DEEP = "#2FA80A"
 INK = "#07070A"
+
+# TikTok: acento cian sobre fondo casi negro. YouTube: rojo. No son los
+# logos oficiales (ver icons.py), pero sí los colores que la gente asocia
+# de un vistazo a cada plataforma.
+TIKTOK = "#25F4EE"
+TIKTOK_DEEP = "#0FB8B2"
+YOUTUBE = "#FF0033"
+YOUTUBE_DEEP = "#B3001F"
+YOUTUBE_SOFT = "#FF8FA3"

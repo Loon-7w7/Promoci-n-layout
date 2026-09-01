@@ -1,8 +1,8 @@
-# Generador de overlay Twitch / Kick
+# Generador de overlay Twitch / Kick / TikTok / YouTube
 
 Interfaz web para generar el overlay vertical (1080×1920) en **WebM con canal alfa**,
-con la animación de entrada. Cambias el nombre, activas o desactivas cada plataforma
-y descargas el archivo listo para Filmora.
+con la animación de entrada. Eliges hasta **dos** de las cuatro plataformas, escribes
+el nombre de cada una y descargas el archivo listo para Filmora.
 
 ## Qué necesitas
 
@@ -68,9 +68,11 @@ cd src
 python -m overlay --twitch Loon_VT --kick LoonVT
 python -m overlay --twitch Harukii_VT --kick Harukii_VT --position baja --animation rebote
 python -m overlay --kick solo_kick --align izquierda -o mi-overlay.webm
+python -m overlay --tiktok loonclips --youtube LoonYT
 ```
 
-Al menos uno de `--twitch` o `--kick` es obligatorio.
+`--twitch`, `--kick`, `--tiktok`, `--youtube`: **al menos uno, como máximo dos** a
+la vez (con tres o más, el programa se detiene con un error).
 
 Opciones: `--align` (izquierda, centro, derecha), `--position` (alta, media, baja),
 `--animation` (barrido, deslizar, rebote, escala, cortina, desvanecer),
@@ -87,8 +89,8 @@ Opciones: `--align` (izquierda, centro, derecha), `--position` (alta, media, baj
 | `cortina` | Se abre a lo ancho desde el centro |
 | `desvanecer` | Solo aparece, sin movimiento |
 
-En todas, los bloques de Twitch y Kick entran escalonados y el texto de arriba
-aparece al final.
+En todas, los bloques de la izquierda y la derecha entran escalonados y el texto de
+arriba aparece al final.
 
 Están definidas en `anim_state()`, dentro de `src/overlay/animation.py`. Cada una es
 un puñado de líneas que devuelven desplazamiento, escala y opacidad en función del
@@ -119,9 +121,11 @@ En `src/overlay/constants.py`:
 
 - `POSITIONS`: las tres alturas de la barra en píxeles.
 - `MAXW`: ancho máximo de la barra. Está en 822 para no chocar con la columna de
-  botones de TikTok y Reels.
-- `VIOLET`, `GREEN`, `INK`: la paleta.
+  botones de TikTok y Reels (la de la app, no la red social).
 - `NAME_MAX_2` y `NAME_MAX_1`: cuerpo de letra máximo con dos plataformas o con una.
+
+En `src/overlay/platforms.py` está el color, el icono y los textos de cada red. Para
+cambiarle el color de acento a una, es el único archivo que hace falta tocar.
 
 En `src/overlay/svg.py`, dentro de `frame_svg`, los tramos `_seg(t, inicio, fin)` (en
 `src/overlay/animation.py`) controlan el tiempo de cada elemento de la entrada.

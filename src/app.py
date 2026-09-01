@@ -18,11 +18,11 @@ from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 import overlay
-from overlay import Config, POSITIONS
+from overlay import Config, POSITIONS, PLATFORM_ORDER
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
-app = FastAPI(title="Overlay Twitch/Kick")
+app = FastAPI(title="Overlay Twitch/Kick/TikTok/YouTube")
 app.mount("/fonts", StaticFiles(directory=os.path.join(BASE, "fonts")), name="fonts")
 app.mount("/static", StaticFiles(directory=os.path.join(BASE, "static")), name="static")
 
@@ -30,6 +30,8 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE, "static")), name="
 class RenderIn(BaseModel):
     twitch: str | None = None
     kick: str | None = None
+    tiktok: str | None = None
+    youtube: str | None = None
     label: str = "sígueme en vivo"
     position: str = "media"
     align: str = "centro"
@@ -48,6 +50,8 @@ def index():
 def preview(
     twitch: str | None = Query(None),
     kick: str | None = Query(None),
+    tiktok: str | None = Query(None),
+    youtube: str | None = Query(None),
     label: str = Query("sígueme en vivo"),
     position: str = Query("media"),
     align: str = Query("centro"),
@@ -56,7 +60,7 @@ def preview(
 ):
     """Vista previa del overlay. Con animate=1 sale animada con SMIL."""
     try:
-        cfg = Config(twitch, kick, label, position, align, animation).clean()
+        cfg = Config(twitch, kick, tiktok, youtube, label, position, align, animation).clean()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     svg = overlay.frame_svg(99.0, cfg, cycle=3.4 if animate else None)
@@ -71,8 +75,8 @@ def render(body: RenderIn):
         raise HTTPException(status_code=500,
                             detail="No encuentro ffmpeg en el PATH del servidor.")
     try:
-        cfg = Config(body.twitch, body.kick, body.label, body.position,
-                     body.align, body.animation, body.duration, body.fps).clean()
+        cfg = Config(body.twitch, body.kick, body.tiktok, body.youtube, body.label,
+                     body.position, body.align, body.animation, body.duration, body.fps).clean()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -101,4 +105,5 @@ def health():
         motor = f"ninguno ({e})"
     return {"ok": True, "ffmpeg": overlay.ffmpeg_ok(), "rasterizador": motor,
             "posiciones": list(POSITIONS), "alineaciones": list(overlay.ALIGNMENTS),
-            "animaciones": overlay.ANIMATIONS}
+            "animaciones": overlay.ANIMATIONS,
+            "plataformas": list(PLATFORM_ORDER), "plataformas_maximo": 2}

@@ -1,4 +1,4 @@
-"""CLI: python -m overlay --twitch ... --kick ...
+"""CLI: python -m overlay --twitch ... --kick ... (maximo dos plataformas)
 
 Ejecutar desde src/, para que el paquete "overlay" sea importable.
 """
@@ -14,6 +14,8 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Genera el overlay WebM con alfa.")
     p.add_argument("--twitch")
     p.add_argument("--kick")
+    p.add_argument("--tiktok")
+    p.add_argument("--youtube")
     p.add_argument("--label", default="sígueme en vivo")
     p.add_argument("--position", default="media", choices=list(POSITIONS))
     p.add_argument("--align", default="centro", choices=list(ALIGNMENTS))
@@ -22,7 +24,7 @@ def main() -> None:
     p.add_argument("--fps", type=int, default=30)
     p.add_argument("-o", "--out")
     a = p.parse_args()
-    c = Config(a.twitch, a.kick, a.label, a.position, a.align,
+    c = Config(a.twitch, a.kick, a.tiktok, a.youtube, a.label, a.position, a.align,
                a.animation, a.duration, a.fps).clean()
     out = a.out or f"overlay-{c.slug()}.webm"
     print("Renderizando...", out)
