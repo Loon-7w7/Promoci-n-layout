@@ -46,7 +46,9 @@ function refrescar() {
 
   const s = estado();
   const err = validar(s);
-  $('warn').textContent = err;
+  $('warn1').textContent = err;
+  $('next').disabled = !!err;
+  $('warn').textContent = '';
   $('go').disabled = !!err;
   if (err) {
     $('prev').removeAttribute('src');
@@ -76,6 +78,28 @@ for (const p of PLATFORMS) {
 ['label', 'position', 'align', 'animation', 'duration'].forEach(id => {
   $(id).addEventListener('input', refrescar);
   $(id).addEventListener('change', refrescar);
+});
+
+function irAPaso(n) {
+  $('step1').hidden = n !== 1;
+  $('step2').hidden = n !== 2;
+  $('tabStep1').setAttribute('aria-current', String(n === 1));
+  $('tabStep2').setAttribute('aria-current', String(n === 2));
+}
+
+$('next').addEventListener('click', () => {
+  const err = validar(estado());
+  if (err) { $('warn1').textContent = err; return; }
+  irAPaso(2);
+});
+
+$('back').addEventListener('click', () => irAPaso(1));
+
+$('tabStep1').addEventListener('click', () => irAPaso(1));
+$('tabStep2').addEventListener('click', () => {
+  const err = validar(estado());
+  if (err) { $('warn1').textContent = err; return; }
+  irAPaso(2);
 });
 
 document.querySelectorAll('.bgpick button').forEach(b => {

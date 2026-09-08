@@ -12,84 +12,102 @@
     <h1>Generador de overlay</h1>
     <p class="lead">Vertical 1080×1920, WebM con canal alfa, listo para Filmora. Elige hasta dos plataformas.</p>
 
-    <div class="panel">
-      <div class="plat-grid">
-        <div class="platform tw" id="pTw" data-on="1">
-          <div class="prow">
-            <span class="chip tw">T</span>
-            <span class="pname">Twitch</span>
-            <span class="sw"><input type="checkbox" id="onTw" checked><span class="track"></span><span class="knob"></span></span>
+    <div class="tabs">
+      <button class="tab" id="tabStep1" data-step="1" aria-current="true">1. Plataformas</button>
+      <button class="tab" id="tabStep2" data-step="2">2. Configuración</button>
+    </div>
+
+    <div class="step" id="step1">
+      <div class="panel">
+        <label class="small">Plataformas (hasta dos)</label>
+        <div class="plat-grid">
+          <div class="platform tw" id="pTw" data-on="1">
+            <div class="prow">
+              <span class="chip tw">T</span>
+              <span class="pname">Twitch</span>
+              <span class="sw"><input type="checkbox" id="onTw" checked><span class="track"></span><span class="knob"></span></span>
+            </div>
+            <div class="field"><div class="field-inner"><span class="pre">twitch.tv/</span><input type="text" id="nameTw" placeholder="tu_usuario" spellcheck="false"></div></div>
           </div>
-          <div class="field"><span class="pre">twitch.tv/</span><input type="text" id="nameTw" placeholder="tu_usuario" spellcheck="false"></div>
+
+          <div class="platform kk" id="pKk" data-on="1">
+            <div class="prow">
+              <span class="chip kk">K</span>
+              <span class="pname">Kick</span>
+              <span class="sw"><input type="checkbox" id="onKk" checked><span class="track"></span><span class="knob"></span></span>
+            </div>
+            <div class="field"><div class="field-inner"><span class="pre">kick.com/</span><input type="text" id="nameKk" placeholder="tu_usuario" spellcheck="false"></div></div>
+          </div>
+
+          <div class="platform tt" id="pTt" data-on="0">
+            <div class="prow">
+              <span class="chip tt">♪</span>
+              <span class="pname">TikTok</span>
+              <span class="sw"><input type="checkbox" id="onTt"><span class="track"></span><span class="knob"></span></span>
+            </div>
+            <div class="field"><div class="field-inner"><span class="pre">tiktok.com/</span><input type="text" id="nameTt" placeholder="tu_usuario" spellcheck="false"></div></div>
+          </div>
+
+          <div class="platform yt" id="pYt" data-on="0">
+            <div class="prow">
+              <span class="chip yt">▶</span>
+              <span class="pname">YouTube</span>
+              <span class="sw"><input type="checkbox" id="onYt"><span class="track"></span><span class="knob"></span></span>
+            </div>
+            <div class="field"><div class="field-inner"><span class="pre">youtube.com/</span><input type="text" id="nameYt" placeholder="tu_usuario" spellcheck="false"></div></div>
+          </div>
         </div>
 
-        <div class="platform kk" id="pKk" data-on="1">
-          <div class="prow">
-            <span class="chip kk">K</span>
-            <span class="pname">Kick</span>
-            <span class="sw"><input type="checkbox" id="onKk" checked><span class="track"></span><span class="knob"></span></span>
-          </div>
-          <div class="field"><span class="pre">kick.com/</span><input type="text" id="nameKk" placeholder="tu_usuario" spellcheck="false"></div>
-        </div>
-
-        <div class="platform tt" id="pTt" data-on="0">
-          <div class="prow">
-            <span class="chip tt">♪</span>
-            <span class="pname">TikTok</span>
-            <span class="sw"><input type="checkbox" id="onTt"><span class="track"></span><span class="knob"></span></span>
-          </div>
-          <div class="field"><span class="pre">tiktok.com/</span><input type="text" id="nameTt" placeholder="tu_usuario" spellcheck="false"></div>
-        </div>
-
-        <div class="platform yt" id="pYt" data-on="0">
-          <div class="prow">
-            <span class="chip yt">▶</span>
-            <span class="pname">YouTube</span>
-            <span class="sw"><input type="checkbox" id="onYt"><span class="track"></span><span class="knob"></span></span>
-          </div>
-          <div class="field"><span class="pre">youtube.com/</span><input type="text" id="nameYt" placeholder="tu_usuario" spellcheck="false"></div>
-        </div>
+        <button class="go" id="next">Siguiente</button>
+        <div class="warn" id="warn1"></div>
       </div>
+    </div>
 
-      <label class="small" for="label">Texto de arriba</label>
-      <div class="field"><input type="text" id="label" value="sígueme en vivo" maxlength="40"></div>
+    <div class="step" id="step2" hidden>
+      <div class="panel">
+        <label class="small" for="label">Texto de arriba</label>
+        <div class="field"><input type="text" id="label" value="sígueme en vivo" maxlength="40"></div>
 
-      <label class="small" for="animation">Animación de entrada</label>
-      <div class="field"><select id="animation">
-        <option value="barrido" selected>Barrido lateral</option>
-        <option value="deslizar">Sube desde abajo</option>
-        <option value="rebote">Sube con rebote</option>
-        <option value="escala">Crece desde el centro</option>
-        <option value="cortina">Se abre como cortina</option>
-        <option value="desvanecer">Aparece suave</option>
-      </select></div>
+        <label class="small" for="animation">Animación de entrada</label>
+        <div class="field"><select id="animation">
+          <option value="barrido" selected>Barrido lateral</option>
+          <option value="deslizar">Sube desde abajo</option>
+          <option value="rebote">Sube con rebote</option>
+          <option value="escala">Crece desde el centro</option>
+          <option value="cortina">Se abre como cortina</option>
+          <option value="desvanecer">Aparece suave</option>
+        </select></div>
 
-      <div class="grid2">
-        <div>
-          <label class="small" for="position">Altura</label>
-          <div class="field"><select id="position">
-            <option value="alta">Alta</option>
-            <option value="media" selected>Media</option>
-            <option value="baja">Baja</option>
-          </select></div>
+        <div class="grid2">
+          <div>
+            <label class="small" for="position">Altura</label>
+            <div class="field"><select id="position">
+              <option value="alta">Alta</option>
+              <option value="media" selected>Media</option>
+              <option value="baja">Baja</option>
+            </select></div>
+          </div>
+          <div>
+            <label class="small" for="align">Alineación</label>
+            <div class="field"><select id="align">
+              <option value="izquierda">Izquierda</option>
+              <option value="centro" selected>Centro</option>
+              <option value="derecha">Derecha</option>
+            </select></div>
+          </div>
         </div>
-        <div>
-          <label class="small" for="align">Alineación</label>
-          <div class="field"><select id="align">
-            <option value="izquierda">Izquierda</option>
-            <option value="centro" selected>Centro</option>
-            <option value="derecha">Derecha</option>
-          </select></div>
+
+        <label class="small" for="duration">Duración (s)</label>
+        <div class="field"><input type="number" id="duration" value="6" min="2" max="30" step="1"></div>
+
+        <div class="btn-row">
+          <button class="back" id="back">Atrás</button>
+          <button class="go" id="go">Generar WebM</button>
         </div>
+        <div class="warn" id="warn"></div>
+        <div class="status" id="status"></div>
+        <a class="dl" id="dl" style="display:none" download>Descargar archivo</a>
       </div>
-
-      <label class="small" for="duration">Duración (s)</label>
-      <div class="field"><input type="number" id="duration" value="6" min="2" max="30" step="1"></div>
-
-      <button class="go" id="go">Generar WebM</button>
-      <div class="warn" id="warn"></div>
-      <div class="status" id="status"></div>
-      <a class="dl" id="dl" style="display:none" download>Descargar archivo</a>
     </div>
   </div>
 
