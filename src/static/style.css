@@ -51,7 +51,7 @@ button.back {
 }
 button.back:hover { border-color: var(--violet-soft); }
 
-.plat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.plat-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
 .platform { border: 1px solid var(--line); border-radius: 10px; padding: 5px 7px; transition: border-color .15s, background .15s, opacity .15s; }
 .platform[data-on="1"].tw { border-color: color-mix(in srgb, var(--violet) 70%, transparent); background: color-mix(in srgb, var(--violet) 10%, transparent); }
 .platform[data-on="1"].kk { border-color: color-mix(in srgb, var(--green) 55%, transparent); background: color-mix(in srgb, var(--green) 7%, transparent); }
@@ -99,7 +99,6 @@ select option { background: #171327; }
 .platform[data-on="0"] .field {
   grid-template-rows: 0fr; opacity: 0; margin-top: 0; border-color: transparent; pointer-events: none;
 }
-.platform[data-on="0"] .pname { display: none; }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 label.small { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
