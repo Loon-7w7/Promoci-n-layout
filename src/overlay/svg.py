@@ -138,14 +138,14 @@ def frame_svg(t: float, cfg: Config, cycle: float | None = None) -> str:
         op_key, dy_key = _SLOTS[i]
         x = L["x1"] if i == 0 else L["x2"]
         color = "#FFFFFF" if p.text_white else p.color
-        url_opacity = 0.62 if p.text_white else 0.7
+        url_opacity = 0.82 if p.text_white else 0.85
         s.append(f'<g opacity="{st[op_key]:.3f}">{anim("opacity", op_key)}')
         s.append(f'<g transform="translate(0,{st[dy_key]:.2f})">'
                  + (_smil("transform", [f'0 {smp[dy_key]:.2f}' for smp in samples], cycle, "translate") if cycle else ""))
         s.append(p.icon(x, L["icon_y"]))
         tx = x + ICON + GAPIT
         s.append(f'<g fill="{color}" opacity="{url_opacity}">'
-                 + text_path(p.url, "medium", 22, tx, L["url_y"], 2) + '</g>')
+                 + text_path(p.url, "bold", 26, tx, L["url_y"], 1.5) + '</g>')
         s.append(f'<g fill="{color}">'
                  + text_path(name, "bold", size, tx, L["name_y"], 0.5) + '</g>')
         s.append('</g></g>')

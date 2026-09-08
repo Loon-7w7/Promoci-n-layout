@@ -33,7 +33,7 @@ src/overlay/             Paquete del motor. Sin dependencias de FastAPI. Ejecuta
   typography.py            measure(), text_path(): la fuente convertida a trazos.
   config.py                Config y su unico validador, clean().
   layout.py                layout(cfg): toda la geometria resuelta en un solo lugar.
-  icons.py                 icono de cada red: formas propias, no los logos oficiales.
+  icons.py                 icono de cada red: lee los SVG oficiales de src/svg/.
   platforms.py             registro de las 4 redes: icono, color y textos de cada una.
   animation.py             anim_state(t, cfg, L): unica fuente de verdad de la animacion.
   svg.py                   frame_svg(): arma el SVG completo a partir de las piezas anteriores.
@@ -45,6 +45,7 @@ src/static/index.html    Esqueleto de la interfaz. Sin framework ni paso de buil
 src/static/style.css     Estilos de la interfaz.
 src/static/app.js        Lógica de la interfaz (estado, validación, fetch a la API).
 src/fonts/               Poppins Bold, Medium y Light (OFL 1.1) + su nota de licencia.
+src/svg/                 Logos oficiales de Twitch, Kick, TikTok y YouTube. icons.py los lee.
 requirements.txt         resvg-py es el rasterizador; cairosvg está comentado como alternativa.
 docs/README.md           Para quien va a usar la app.
 docs/CONTEXTO.md         Resumen corto de decisiones. Este archivo es la versión larga.
@@ -54,11 +55,12 @@ docs/CONTEXTO.md         Resumen corto de decisiones. Este archivo es la versió
 §4). `src/app.py` deliberadamente no sabe nada de SVG ni de geometría: si te encuentras
 escribiendo coordenadas en `app.py`, algo se salió de lugar.
 
-Los módulos de `overlay/` calculan la ruta a `fonts/` a partir de su propio `__file__`
-(ver `typography.py`), por eso el paquete y `fonts/` viven juntos dentro de `src/`. Lo
-mismo pasa con `app.py` y `static/`. Si alguno se mueve solo, esas rutas dejan de
-coincidir. `CLAUDE.md` y `requirements.txt` se quedan en la raíz porque ahí es donde las
-herramientas (pip, Claude Code) los buscan por convención.
+Los módulos de `overlay/` calculan la ruta a `fonts/` y a `svg/` a partir de su propio
+`__file__` (ver `typography.py` e `icons.py`), por eso el paquete, `fonts/` y `svg/`
+viven juntos dentro de `src/`. Lo mismo pasa con `app.py` y `static/`. Si alguno se
+mueve solo, esas rutas dejan de coincidir. `CLAUDE.md` y `requirements.txt` se quedan
+en la raíz porque ahí es donde las herramientas (pip, Claude Code) los buscan por
+convención.
 
 `import overlay` sigue funcionando igual que cuando era un solo archivo: `__init__.py`
 reexporta toda la API pública, así que `app.py` no tuvo que cambiar una sola línea al
@@ -325,8 +327,10 @@ servidor lo ignora y no falla nada.
 **Agregar una quinta plataforma** toca cinco lugares:
 
 1. `overlay/constants.py`: el id nuevo al final de `PLATFORM_ORDER`, y sus colores.
-2. `overlay/icons.py`: la función `xxx_icon(x, y)` — forma geométrica propia, no el
-   logo oficial (ver §6).
+2. `src/svg/xxx-icon.svg`: el logo oficial (ver §6), bajado de la guía de marca de la
+   plataforma. `overlay/icons.py`: la función `xxx_icon(x, y)` que lo carga (calca las
+   que ya existen; solo cambia el nombre de archivo y, si el SVG ya trae su propio
+   fondo como el de YouTube, el `bg=None`).
 3. `overlay/platforms.py`: la entrada en `PLATFORMS` (label, url, icono, color,
    `edge_light`/`edge_dark`, `tint_opacity`, `text_white`).
 4. `overlay/config.py`: el campo `str | None` en `Config`. `clean()`, `active()` y
@@ -356,10 +360,14 @@ el estándar al pie de la letra— aplica las sombras en espacio lineal y el tex
 apagado. cairosvg lo ignoraba, así que el problema solo aparece al cambiar de motor.
 Cualquier filtro nuevo necesita el mismo atributo.
 
-**Los iconos son formas geométricas propias**, no los logos oficiales de ninguna de
-las 4 plataformas (el de TikTok es una nota musical genérica; el de YouTube, un
-triángulo de play). Si vas a usar los oficiales, bájalos de las guías de marca de
-cada plataforma y respeta sus reglas de uso.
+**Los iconos son los logos oficiales**, guardados como SVG en `src/svg/` (uno por
+plataforma, bajados de la guía de marca de cada una). `overlay/icons.py` los lee al
+vuelo: extrae el `viewBox` y el contenido del archivo, lo escala para que ocupe un
+64 % del cuadrado `ICON` y lo centra ahí (YouTube usa 88 %, porque su SVG ya trae su
+propio fondo redondeado y no hace falta dibujarle uno encima). Para cambiar un logo,
+alcanza con reemplazar el archivo correspondiente en `src/svg/`: nada más depende de
+su contenido, solo del nombre. Al ser marcas de terceros, cualquier reemplazo tiene
+que respetar las reglas de uso de la guía de marca de esa plataforma.
 
 **Como máximo dos plataformas a la vez.** No es una limitación técnica cualquiera:
 `MAXW` y el ancho del icono/nombre están calibrados para dos bloques como mucho. Si

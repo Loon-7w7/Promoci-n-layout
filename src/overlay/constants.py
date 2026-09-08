@@ -45,9 +45,9 @@ GREEN = "#53FC18"
 GREEN_DEEP = "#2FA80A"
 INK = "#07070A"
 
-# TikTok: acento cian sobre fondo casi negro. YouTube: rojo. No son los
-# logos oficiales (ver icons.py), pero sí los colores que la gente asocia
-# de un vistazo a cada plataforma.
+# TikTok: acento cian sobre fondo casi negro. YouTube: rojo. Son los colores
+# que la gente asocia de un vistazo a cada plataforma, usados para el tinte y
+# el borde de la barra (no para el icono, que sale de src/svg/, ver icons.py).
 TIKTOK = "#25F4EE"
 TIKTOK_DEEP = "#0FB8B2"
 YOUTUBE = "#FF0033"

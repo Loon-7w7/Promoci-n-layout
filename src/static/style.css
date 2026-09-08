@@ -195,28 +195,23 @@ button.back:hover {
   width: 19px;
   height: 19px;
   border-radius: 6px;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  font-size: 11px;
   flex: none;
+  object-fit: contain;
+  padding: 4px;
+  box-sizing: border-box;
 }
 .chip.tw {
   background: #fff;
-  color: var(--violet);
 }
 .chip.kk {
-  background: var(--green);
-  color: #07070a;
+  background: #000;
 }
 .chip.tt {
-  background: var(--ink);
-  color: var(--tiktok);
+  background: #fff;
   border: 1px solid var(--tiktok);
 }
 .chip.yt {
-  background: var(--youtube);
-  color: #fff;
+  background: #fff;
 }
 
 /* interruptor */

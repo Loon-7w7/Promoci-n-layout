@@ -24,6 +24,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI(title="Overlay Twitch/Kick/TikTok/YouTube")
 app.mount("/fonts", StaticFiles(directory=os.path.join(BASE, "fonts")), name="fonts")
+app.mount("/svg", StaticFiles(directory=os.path.join(BASE, "svg")), name="svg")
 app.mount("/static", StaticFiles(directory=os.path.join(BASE, "static")), name="static")
 
 
