@@ -27,12 +27,11 @@ def layout(cfg: Config) -> dict:
         pid, name = active[0]
         size = NAME_MAX_1
         tw = max(measure(name, "bold", size, 0.5), measure(PLATFORMS[pid].url, "medium", 22, 2))
-        bw = 2 * PAD + ICON + GAPIT + tw
-        if bw > MAXW:
-            size = max(NAME_MIN, size * (MAXW - 2 * PAD - ICON - GAPIT) / tw)
+        bw = MAXW
+        avail = bw - 2 * PAD - ICON - GAPIT
+        if tw > avail:
+            size = max(NAME_MIN, size * avail / tw)
             tw = measure(name, "bold", size, 0.5)
-            bw = 2 * PAD + ICON + GAPIT + tw
-        bw = min(MAXW, max(420, bw))
         avail = None
 
     if cfg.align == "centro":
@@ -48,7 +47,8 @@ def layout(cfg: Config) -> dict:
         mid = (x1 + ICON + GAPIT + avail + x2) / 2
         seam = (mid + 30, mid - 30)
     else:
-        x1 = x2 = bx + PAD
+        block_w = ICON + GAPIT + tw
+        x1 = x2 = bx + (bw - block_w) / 2
         seam = None
 
     # la etiqueta de arriba sigue la alineacion de la barra
