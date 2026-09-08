@@ -46,6 +46,8 @@ body {
   background:
     radial-gradient(900px 600px at 12% -10%, #2a1a52 0%, transparent 60%),
     radial-gradient(700px 500px at 105% 110%, #10320a 0%, transparent 55%),
+    radial-gradient(600px 480px at 95% -8%, #0a2e30 0%, transparent 55%),
+    radial-gradient(650px 500px at -5% 108%, #330a12 0%, transparent 55%),
     var(--ink);
 }
 h1 {
