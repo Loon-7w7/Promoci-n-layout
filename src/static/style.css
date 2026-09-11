@@ -498,6 +498,9 @@ a.dl {
 .social-btn {
   margin-left: auto;
   flex: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   text-decoration: none;
   cursor: pointer;
   border: 1px solid var(--line);
@@ -512,6 +515,9 @@ a.dl {
 }
 .social-btn:hover {
   border-color: var(--violet-soft);
+}
+.kofi-icon {
+  flex: none;
 }
 
 .site-footer {
