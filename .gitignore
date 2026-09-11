@@ -9,3 +9,4 @@ frames/
 .DS_Store
 .idea/
 .vscode/
+.vercel/

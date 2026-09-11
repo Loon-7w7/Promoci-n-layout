@@ -47,6 +47,9 @@ src/static/app.js        Lógica de la interfaz (estado, validación, fetch a la
 src/fonts/               Poppins Bold, Medium y Light (OFL 1.1) + su nota de licencia.
 src/svg/                 Logos oficiales de Twitch, Kick, TikTok y YouTube. icons.py los lee.
 requirements.txt         resvg-py es el rasterizador; cairosvg está comentado como alternativa.
+                          imageio-ffmpeg es el respaldo portátil de ffmpeg (ver §10, Vercel).
+Dockerfile                Deploy con ffmpeg del sistema (Render, Railway, cualquier contenedor).
+vercel.json               Deploy serverless (ver §10). No reemplaza al Dockerfile, es otro camino.
 docs/README.md           Para quien va a usar la app.
 docs/CONTEXTO.md         Resumen corto de decisiones. Este archivo es la versión larga.
 ```
@@ -460,7 +463,44 @@ funciones puras y el sitio obvio por donde empezar.
 
 ---
 
-## 10. Ideas pendientes
+## 10. Desplegar
+
+### Docker (Render, Railway, cualquier host de contenedores)
+
+El `Dockerfile` instala `ffmpeg` con `apt-get` y corre `uvicorn` directo. No necesita
+nada más: es el camino "natural" para esta app, porque el proceso vive todo el tiempo
+que quiera y tiene disco propio.
+
+### Vercel
+
+Vercel es serverless: no corre el `Dockerfile`, cada request (o casi) es una función
+nueva, y el directorio de despliegue es de solo lectura salvo `/tmp`. `vercel.json`,
+en la raíz, apunta al entrypoint que Vercel detecta solo (`src/app.py`, que ya expone
+`app`; FastAPI y Flask están entre los frameworks que reconoce sin configuración
+extra). Tres cosas que no son obvias:
+
+- **No hay `ffmpeg` instalado.** `overlay/render.py` primero busca `ffmpeg` en el
+  PATH (sirve para Docker y desarrollo local) y, si no aparece, cae al binario
+  portátil de `imageio-ffmpeg` (ver `requirements.txt`), que trae su propio ejecutable
+  de ffmpeg empaquetado y no depende de nada del sistema.
+- **`/var/task` es de solo lectura.** Los fotogramas y el WebM final ya se escriben
+  con `tempfile` en el directorio temporal del sistema, que en Linux es `/tmp` por
+  default, así que esto no necesitó cambios.
+- **`includeFiles: "src/**"` en `vercel.json` es necesario.** `fonts/`, `svg/` y
+  `static/` se leen por ruta en tiempo de ejecución (`StaticFiles`, `text_path()` en
+  `typography.py`, `icons.py`), no por `import`, y el rastreador de dependencias de
+  Vercel no los encuentra solo si no se lo decís explícitamente.
+
+`maxDuration: 60` en `vercel.json` es el tope del plan Hobby. El render de 180
+fotogramas (6 s a 30 fps) puede acercarse a eso en una función con pocos núcleos; si
+se corta, subí ese número (necesita plan Pro, hasta 300 s o más con Fluid Compute) o
+bajá `duration`/`fps` desde la interfaz. `resvg-py` también necesita rueda compatible
+con el entorno de build de Vercel (Linux x86_64); si falla la instalación, revisá que
+haya una rueda manylinux publicada para la versión de Python del proyecto.
+
+Deploy: `vercel` (preview) o `vercel --prod`, parado en la raíz del repo.
+
+## 11. Ideas pendientes
 
 - Empaquetarlo en Docker.
 - Selector de colores, para reusar el generador con otra paleta.

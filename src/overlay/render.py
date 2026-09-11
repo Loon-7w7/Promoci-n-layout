@@ -1,7 +1,12 @@
-"""Reparte los fotogramas entre procesos y llama a ffmpeg. Ver CLAUDE.md #4.6.
+"""Reparte los fotogramas entre procesos y llama a ffmpeg. Ver CLAUDE.md #4.6 y #7.
 
 Los parametros de ffmpeg no son negociables si se quiere conservar el alfa:
 -c:v libvpx-vp9 -pix_fmt yuva420p -auto-alt-ref 0.
+
+ffmpeg se busca primero en el PATH del sistema (Docker, desarrollo local) y,
+si no aparece, se cae al binario portatil de imageio-ffmpeg (Vercel y
+cualquier entorno sin ffmpeg instalado). El resultado se memoriza igual que
+raster_engine() en raster.py.
 """
 
 from __future__ import annotations
@@ -25,13 +30,36 @@ def _worker(job):
     return i
 
 
+_FFMPEG = None
+
+
+def _ffmpeg_path() -> str | None:
+    global _FFMPEG
+    if _FFMPEG:
+        return _FFMPEG
+    path = shutil.which("ffmpeg")
+    if path:
+        _FFMPEG = path
+        return _FFMPEG
+    try:
+        import imageio_ffmpeg
+        _FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+        return _FFMPEG
+    except Exception:
+        return None
+
+
 def ffmpeg_ok() -> bool:
-    return shutil.which("ffmpeg") is not None
+    return _ffmpeg_path() is not None
 
 
 def render_webm(cfg: Config, out_path: str, workers: int | None = None) -> str:
-    if not ffmpeg_ok():
-        raise RuntimeError("No encuentro ffmpeg en el PATH. Instalalo y vuelve a intentar.")
+    ffmpeg = _ffmpeg_path()
+    if not ffmpeg:
+        raise RuntimeError(
+            "No encuentro ffmpeg. Instalalo y agregalo al PATH, o instala "
+            "imageio-ffmpeg (pip install imageio-ffmpeg)."
+        )
     raster_engine()  # falla temprano y con un mensaje claro si no hay rasterizador
     cfg = cfg.clean()
     n = int(round(cfg.duration * cfg.fps))
@@ -41,7 +69,7 @@ def render_webm(cfg: Config, out_path: str, workers: int | None = None) -> str:
         with ProcessPoolExecutor(max_workers=workers or max(1, (os.cpu_count() or 2))) as ex:
             list(ex.map(_worker, jobs, chunksize=4))
         subprocess.run(
-            ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            [ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
              "-framerate", str(cfg.fps), "-i", os.path.join(tmp, "f%05d.png"),
              "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p",
              "-b:v", "0", "-crf", "26", "-auto-alt-ref", "0", "-row-mt", "1",

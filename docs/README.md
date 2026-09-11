@@ -136,6 +136,30 @@ Poppins está incluida en `src/fonts/` bajo licencia SIL Open Font License 1.1.
 Puedes cambiarla por cualquier otro `.ttf`: reemplaza los archivos y ajusta el
 diccionario `FONTS` en `src/overlay/typography.py`.
 
+## Desplegar
+
+### Vercel
+
+```bash
+vercel        # preview
+vercel --prod # producción
+```
+
+Corrélo parado en la raíz del repo, donde está `vercel.json`. No hace falta
+configurar nada más: Vercel detecta `src/app.py` solo y lo instala con el
+`requirements.txt` de la raíz.
+
+Vercel no trae `ffmpeg` instalado, así que el proyecto usa `imageio-ffmpeg` (ya
+en `requirements.txt`) como respaldo portátil cuando no lo encuentra en el
+sistema. Si el render tarda demasiado y la función corta a los 60 segundos,
+bajá `duration` o `fps` desde la interfaz, o subí `maxDuration` en
+`vercel.json` (necesita plan Pro).
+
+### Docker (Render, Railway, cualquier host de contenedores)
+
+El `Dockerfile` instala `ffmpeg` con `apt-get` y corre `uvicorn` directo, sin
+nada más que configurar.
+
 ## Si algo falla
 
 **`no library called "cairo-2" was found`**

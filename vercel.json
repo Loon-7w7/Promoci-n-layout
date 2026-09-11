@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "src/app.py": {
+      "includeFiles": "src/**",
+      "memory": 3009,
+      "maxDuration": 60
+    }
+  }
+}
